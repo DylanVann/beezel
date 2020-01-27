@@ -12,11 +12,14 @@
   },
   "license": "MIT",
   "author": "Dylan Vann",
+  "files": [
+    "dist"
+  ],
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier src/**/*.ts --write"
+    "format": "prettier src/**/*.ts --write",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "prettier": {
     "semi": false,
