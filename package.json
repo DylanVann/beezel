@@ -16,6 +16,9 @@
     "dist"
   ],
   "main": "dist/index.js",
+  "bin": {
+    "beezel": "dist/index.js"
+  },
   "scripts": {
     "build": "ncc build src/index.ts",
     "format": "prettier src/**/*.ts --write",
