@@ -1,5 +1,5 @@
 import fs from "fs"
-import tar from "tar-fs"
+import tar from "@dylanvann/tar-fs"
 
 export const extractTar = ({
   from,

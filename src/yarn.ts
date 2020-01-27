@@ -1,7 +1,7 @@
 import fs from "fs"
 import fg from "fast-glob"
 import path from "path"
-import tar from "tar-fs"
+import tar from "@dylanvann/tar-fs"
 import { yarnHash } from "./yarnHash"
 import { cacheDir } from "./paths"
 import { extractTar } from "./extractTar"
