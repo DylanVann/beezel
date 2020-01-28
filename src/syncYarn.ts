@@ -17,7 +17,11 @@ const tarFilePath = path.join(cacheDir, tarFileName)
 export const runYarn = async (): Promise<void> => {
   console.log("yarn - Run")
   console.time("yarn - Run")
-  await execa("yarn", { stdout: "inherit", preferLocal: true, cwd: root })
+  await execa("yarn", ["--frozen-lockfile"], {
+    stdout: "inherit",
+    preferLocal: true,
+    cwd: root,
+  })
   console.timeEnd("yarn - Run")
 }
 

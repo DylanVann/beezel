@@ -25,64 +25,133 @@ const getExistsInRemoteCache = async ({
   }
 }
 
-const downloadPackage = async ({ name, fileName, filePath }: PackageInfo) => {
-  console.time(`${name} - Download`)
+const getPackageFromRemoteCache = async ({
+  name,
+  fileName,
+  filePath,
+}: PackageInfo) => {
+  console.time(`${name} - Download ${fileName}`)
   await downloadFromS3({ key: fileName, to: filePath })
-  console.timeEnd(`${name} - Download`)
+  console.timeEnd(`${name} - Download ${fileName}`)
 }
 
-const extractPackage = async ({ name, filePath, location }: PackageInfo) => {
-  console.time(`${name} - Extract`)
+const extractPackage = async ({
+  name,
+  filePath,
+  fileName,
+  location,
+}: PackageInfo) => {
+  console.time(`${name} - Extract ${fileName}`)
   await extractTar({
     from: filePath,
     to: path.join(root, location),
   })
-  console.timeEnd(`${name} - Extract`)
+  console.timeEnd(`${name} - Extract ${fileName}`)
+}
+
+const getPackage = async (
+  info: PackageInfo,
+): Promise<{ isCached: boolean }> => {
+  const { name } = info
+
+  const existsLocally = getExistsInLocalCache(info)
+  if (existsLocally) {
+    console.log(`${name} - Locally Cached`)
+    await extractPackage(info)
+    return { isCached: true }
+  }
+
+  const existsRemotely = await getExistsInRemoteCache(info)
+  if (existsRemotely) {
+    await getPackageFromRemoteCache(info)
+    await extractPackage(info)
+    return { isCached: true }
+  }
+
+  // It's not in our local cache or in the remote cache, so must be build.
+  // Actually some packages may just not have a build command.
+  // In that case nothing will be uploaded to S3.
+  // eslint-disable-next-line no-console
+  console.log(`${name} - Not Cached`)
+  return { isCached: false }
+}
+
+const uploadPackage = async (info: PackageInfo) => {
+  const { name, fileName, filePath, location } = info
+  const cwd = path.join(root, location)
+
+  const existsInRemoteCache = await getExistsInRemoteCache(info)
+  if (existsInRemoteCache) {
+    console.log(`${name} - Already Uploaded`)
+    return
+  }
+
+  // It's not on S3, time to tar it and upload.
+  const untracked = execa.sync("git", ["ls-files", "-o"], { cwd }).stdout
+  const untrackedArray = untracked
+    .split("\n")
+    .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
+
+  if (!untrackedArray.length) {
+    console.log(`${name} - Has No Files`)
+    return
+  }
+
+  const writeStream = fs.createWriteStream(filePath)
+  await new Promise((resolve, reject) =>
+    tar
+      .pack(cwd, { entries: untrackedArray, dereference: true })
+      .pipe(writeStream)
+      .on("error", reject)
+      .on("close", resolve),
+  )
+  const body = await fs.readFile(filePath)
+  const size = fs.statSync(filePath).size
+  const sizeString = filesize(size, { unix: true })
+
+  console.log(`${name} - Upload ${fileName} (${sizeString})`)
+  console.time(`${name} - Upload ${fileName} (${sizeString})`)
+  await S3.upload({
+    Bucket: BUCKET_NAME,
+    Key: fileName,
+    Body: body,
+  }).promise()
+  console.timeEnd(`${name} - Upload ${fileName} (${sizeString})`)
 }
 
 export const syncPackages = async (): Promise<void> => {
   const cachedPackages: string[] = []
 
   const packageHashes = await getPackageHashes()
+  const packageHashesValues = Object.values(packageHashes)
 
+  console.log("-----------------------------------")
   console.time("Download Packages")
-  await Promise.all(
-    Object.values(packageHashes).map(async info => {
-      const { name } = info
-
-      const existsLocally = getExistsInLocalCache(info)
-      if (existsLocally) {
-        console.log(`${name} - Locally Cached`)
-        await extractPackage(info)
-        cachedPackages.push(name)
-        return
-      }
-
-      const existsRemotely = await getExistsInRemoteCache(info)
-      if (existsRemotely) {
-        await downloadPackage(info)
-        await extractPackage(info)
-        cachedPackages.push(name)
-        return
-      }
-
-      // It's not in our local cache or in the remote cache, so must be build.
-      // Actually some packages may just not have a build command.
-      // In that case nothing will be uploaded to S3.
-      // eslint-disable-next-line no-console
-      console.log(`${name} - Not Cached`)
-    }),
-  )
+  for (const info of packageHashesValues) {
+    const { isCached } = await getPackage(info)
+    if (isCached) {
+      cachedPackages.push(info.name)
+    }
+  }
   console.timeEnd("Download Packages")
+  console.log("-----------------------------------")
 
   const ignoreStatements = cachedPackages.flatMap(name => ["--ignore", name])
   try {
     console.time("Build")
-    await execa(
-      "lerna",
-      ["run", "build", "--stream", "--reject-cycles", ...ignoreStatements],
-      { stdout: "inherit", preferLocal: true, cwd: root },
-    )
+    const args = [
+      "run",
+      "build",
+      "--stream",
+      "--reject-cycles",
+      ...ignoreStatements,
+    ]
+    console.log(`lerna ${args.join(" ")}`)
+    await execa("lerna", args, {
+      stdout: "inherit",
+      preferLocal: true,
+      cwd: root,
+    })
     console.timeEnd("Build")
   } catch (e) {
     const allCached = e.stderr.includes("No packages remain after filtering")
@@ -95,50 +164,11 @@ export const syncPackages = async (): Promise<void> => {
     }
   }
 
+  console.log("-----------------------------------")
   console.time("Upload Packages")
-  await Promise.all(
-    Object.values(packageHashes).map(async (info: PackageInfo) => {
-      const { name, fileName, filePath, location } = info
-      const cwd = path.join(root, location)
-
-      const existsInRemoteCache = await getExistsInRemoteCache(info)
-      if (existsInRemoteCache) {
-        console.log(`${name} - Already Uploaded`)
-        return
-      }
-
-      // It's not on S3, time to tar it and upload.
-      const untracked = execa.sync("git", ["ls-files", "-o"], { cwd }).stdout
-      const untrackedArray = untracked
-        .split("\n")
-        .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
-
-      if (!untrackedArray.length) {
-        console.log(`${name} - Has No Files`)
-        return
-      }
-
-      const writeStream = fs.createWriteStream(filePath)
-      await new Promise((resolve, reject) =>
-        tar
-          .pack(cwd, { entries: untrackedArray, dereference: true })
-          .pipe(writeStream)
-          .on("error", reject)
-          .on("close", resolve),
-      )
-      const body = await fs.readFile(filePath)
-      const size = fs.statSync(filePath).size
-      const sizeString = filesize(size, { unix: true })
-
-      console.log(`${name} - Upload ${fileName} (${sizeString})`)
-      console.time(`${name} - Upload ${fileName} (${sizeString})`)
-      await S3.upload({
-        Bucket: BUCKET_NAME,
-        Key: fileName,
-        Body: body,
-      }).promise()
-      console.timeEnd(`${name} - Upload ${fileName} (${sizeString})`)
-    }),
-  )
+  for (const info of packageHashesValues) {
+    await uploadPackage(info)
+  }
   console.timeEnd("Upload Packages")
+  console.log("-----------------------------------")
 }

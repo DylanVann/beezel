@@ -37,39 +37,46 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
 
   const packageHashes: InfoMap = {}
 
-  await Promise.all(
-    packageInfos.map(async packageInfo => {
-      const cwd = path.relative(root, packageInfo.location)
-      const hashObject = getPackageDeps(cwd)
-      // Hash of just the files in this package.
-      // We still need to take into account the global hash, and hashes of dependencies.
-      const hashOfFiles = objectHash(hashObject)
-      const pkgJson = await fs.readJson(path.join(cwd, "package.json"))
-      const depsHashes = Object.keys({
-        ...pkgJson.dependencies,
-        ...pkgJson.devDependencies,
+  // We cannot do this in parallel.
+  for (const packageInfo of packageInfos) {
+    const cwd = path.relative(root, packageInfo.location)
+    const hashObject = getPackageDeps(cwd)
+    // Hash of just the files in this package.
+    // We still need to take into account the global hash, and hashes of dependencies.
+    const hashOfFiles = objectHash(hashObject)
+    const pkgJson = await fs.readJson(path.join(cwd, "package.json"))
+    const depsHashes = Object.keys({
+      ...pkgJson.dependencies,
+      ...pkgJson.devDependencies,
+    })
+      .filter(
+        name =>
+          name.startsWith("@activeviam") ||
+          name === "eslint-config-activeui" ||
+          name === "eslint-plugin-activeui",
+      )
+      // Since we're doing this in topological order
+      // There should be a hash calculated already for dependencies.
+      .map(depName => {
+        const hashOfDep = packageHashes[depName]
+        if (!hashOfDep) {
+          throw new Error(
+            `Something went wrong. Could not get hash of "${depName}".`,
+          )
+        }
+        return hashOfDep
       })
-        .filter(
-          name =>
-            name.startsWith("@activeviam") ||
-            name === "eslint-config-activeui" ||
-            name === "eslint-plugin-activeui",
-        )
-        // Since we're doing this in topological order
-        // There should be a hash calculated already for dependencies.
-        .map(depName => packageHashes[depName])
-      const hash = objectHash([hashOfFiles, depsHashes, globalHash])
-      const slug = path.relative(path.join(root, "packages"), cwd)
-      const fileName = `${slug}-${hash}-${CACHE_KEY}.tar`
-      const filePath = path.join(cacheDir, fileName)
-      packageHashes[packageInfo.name] = {
-        location: cwd,
-        fileName,
-        filePath,
-        name: packageInfo.name,
-      }
-    }),
-  )
+    const hash = objectHash([hashOfFiles, depsHashes, globalHash])
+    const slug = path.relative(path.join(root, "packages"), cwd)
+    const fileName = `${slug}-${hash}-${CACHE_KEY}.tar`
+    const filePath = path.join(cacheDir, fileName)
+    packageHashes[packageInfo.name] = {
+      location: cwd,
+      fileName,
+      filePath,
+      name: packageInfo.name,
+    }
+  }
 
   return packageHashes
 }
