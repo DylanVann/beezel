@@ -37,9 +37,10 @@ const getPackageFromRemoteCache = async ({
   fileName,
   filePath,
 }: PackageInfo) => {
-  console.time(`${name} - ${fileName} - Download`)
+  const message = `${name} - ${fileName} - Download`
+  console.time(message)
   await downloadFromS3({ key: fileName, to: filePath })
-  console.timeEnd(`${name} - ${fileName} - Download`)
+  console.timeEnd(message)
 }
 
 const extractPackage = async ({
@@ -48,12 +49,13 @@ const extractPackage = async ({
   fileName,
   location,
 }: PackageInfo) => {
-  console.time(`${name} - ${fileName}- Extract`)
+  const message = `${name} - ${fileName} - Extract`
+  console.time(message)
   await extractTar({
     from: filePath,
     to: path.join(root, location),
   })
-  console.timeEnd(`${name} - ${fileName} - Extract`)
+  console.timeEnd(message)
 }
 
 const uploadPackage = async (info: PackageInfo) => {
@@ -90,14 +92,15 @@ const uploadPackage = async (info: PackageInfo) => {
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
 
-  console.log(prefix(`Upload (${sizeString})`))
-  console.time(prefix(`Upload (${sizeString})`))
+  const message = prefix(`Upload (${sizeString})`)
+  console.log(message)
+  console.time(message)
   await S3.upload({
     Bucket: BUCKET_NAME,
     Key: fileName,
     Body: body,
   }).promise()
-  console.timeEnd(prefix(`Upload (${sizeString})`))
+  console.timeEnd(message)
 }
 
 export const syncPackages = async (): Promise<void> => {
@@ -117,7 +120,7 @@ export const syncPackages = async (): Promise<void> => {
       console.log(prefix(`Local Cache Hit`))
       await extractPackage(info)
       cachedPackages.push(info.name)
-      return
+      continue
     }
 
     const existsRemotely = await getExistsInRemoteCache(info)
@@ -126,7 +129,7 @@ export const syncPackages = async (): Promise<void> => {
       await getPackageFromRemoteCache(info)
       await extractPackage(info)
       cachedPackages.push(info.name)
-      return
+      continue
     }
 
     // It's not in our local cache or in the remote cache, so must be build.
