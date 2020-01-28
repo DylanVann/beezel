@@ -58,7 +58,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
       // Since we're doing this in topological order
       // There should be a hash calculated already for dependencies.
       .map(depName => {
-        const hashOfDep = packageHashes[depName]
+        const hashOfDep: string = packageHashes[depName].fileName
         if (!hashOfDep) {
           throw new Error(
             `Something went wrong. Could not get hash of "${depName}".`,
