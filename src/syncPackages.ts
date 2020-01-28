@@ -10,8 +10,15 @@ import { downloadFromS3 } from "./downloadFromS3"
 import tar from "@dylanvann/tar-fs"
 import filesize from "filesize"
 
-const getExistsInLocalCache = ({ filePath }: PackageInfo): boolean => {
-  return fs.existsSync(filePath)
+const getExistsInLocalCache = async ({
+  filePath,
+}: PackageInfo): Promise<boolean> => {
+  try {
+    await fs.stat(filePath)
+    return true
+  } catch (e) {
+    return false
+  }
 }
 
 const getExistsInRemoteCache = async ({
@@ -30,9 +37,9 @@ const getPackageFromRemoteCache = async ({
   fileName,
   filePath,
 }: PackageInfo) => {
-  console.time(`${name} - Download ${fileName}`)
+  console.time(`${name} - ${fileName} - Download`)
   await downloadFromS3({ key: fileName, to: filePath })
-  console.timeEnd(`${name} - Download ${fileName}`)
+  console.timeEnd(`${name} - ${fileName} - Download`)
 }
 
 const extractPackage = async ({
@@ -41,48 +48,22 @@ const extractPackage = async ({
   fileName,
   location,
 }: PackageInfo) => {
-  console.time(`${name} - Extract ${fileName}`)
+  console.time(`${name} - ${fileName}- Extract`)
   await extractTar({
     from: filePath,
     to: path.join(root, location),
   })
-  console.timeEnd(`${name} - Extract ${fileName}`)
-}
-
-const getPackage = async (
-  info: PackageInfo,
-): Promise<{ isCached: boolean }> => {
-  const { name } = info
-
-  const existsLocally = getExistsInLocalCache(info)
-  if (existsLocally) {
-    console.log(`${name} - Locally Cached`)
-    await extractPackage(info)
-    return { isCached: true }
-  }
-
-  const existsRemotely = await getExistsInRemoteCache(info)
-  if (existsRemotely) {
-    await getPackageFromRemoteCache(info)
-    await extractPackage(info)
-    return { isCached: true }
-  }
-
-  // It's not in our local cache or in the remote cache, so must be build.
-  // Actually some packages may just not have a build command.
-  // In that case nothing will be uploaded to S3.
-  // eslint-disable-next-line no-console
-  console.log(`${name} - Not Cached`)
-  return { isCached: false }
+  console.timeEnd(`${name} - ${fileName} - Extract`)
 }
 
 const uploadPackage = async (info: PackageInfo) => {
   const { name, fileName, filePath, location } = info
   const cwd = path.join(root, location)
+  const prefix = (message: string) => `${name} - ${fileName} - ${message}`
 
   const existsInRemoteCache = await getExistsInRemoteCache(info)
   if (existsInRemoteCache) {
-    console.log(`${name} - Already Uploaded`)
+    console.log(prefix("Already Uploaded"))
     return
   }
 
@@ -93,7 +74,7 @@ const uploadPackage = async (info: PackageInfo) => {
     .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
 
   if (!untrackedArray.length) {
-    console.log(`${name} - Has No Files`)
+    console.log(prefix("Has No Files"))
     return
   }
 
@@ -109,14 +90,14 @@ const uploadPackage = async (info: PackageInfo) => {
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
 
-  console.log(`${name} - Upload ${fileName} (${sizeString})`)
-  console.time(`${name} - Upload ${fileName} (${sizeString})`)
+  console.log(prefix(`Upload (${sizeString})`))
+  console.time(prefix(`Upload (${sizeString})`))
   await S3.upload({
     Bucket: BUCKET_NAME,
     Key: fileName,
     Body: body,
   }).promise()
-  console.timeEnd(`${name} - Upload ${fileName} (${sizeString})`)
+  console.timeEnd(prefix(`Upload (${sizeString})`))
 }
 
 export const syncPackages = async (): Promise<void> => {
@@ -128,10 +109,30 @@ export const syncPackages = async (): Promise<void> => {
   console.log("-----------------------------------")
   console.time("Download Packages")
   for (const info of packageHashesValues) {
-    const { isCached } = await getPackage(info)
-    if (isCached) {
+    const prefix = (message: string) =>
+      `${info.name} - ${info.fileName} - ${message}`
+
+    const existsLocally = await getExistsInLocalCache(info)
+    if (existsLocally) {
+      console.log(prefix(`Local Cache Hit`))
+      await extractPackage(info)
       cachedPackages.push(info.name)
+      return
     }
+
+    const existsRemotely = await getExistsInRemoteCache(info)
+    if (existsRemotely) {
+      console.log(prefix(`Remote Cache Hit`))
+      await getPackageFromRemoteCache(info)
+      await extractPackage(info)
+      cachedPackages.push(info.name)
+      return
+    }
+
+    // It's not in our local cache or in the remote cache, so must be build.
+    // Actually some packages may just not have a build command.
+    // In that case nothing will be uploaded to S3.
+    console.log(prefix(`Cache Miss`))
   }
   console.timeEnd("Download Packages")
   console.log("-----------------------------------")
