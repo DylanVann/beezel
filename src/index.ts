@@ -8,8 +8,13 @@ import { cacheDir } from "paths"
 
 const run = async () => {
   await fs.ensureDir(cacheDir)
-  await syncYarn()
-  await Promise.all([uploadYarn(), syncPackages()])
+  const { shouldUpload } = await syncYarn()
+  const promises: Promise<any>[] = []
+  promises.push(syncPackages())
+  if (shouldUpload) {
+    promises.push(uploadYarn())
+  }
+  await Promise.all(promises)
 }
 
 run()

@@ -68,11 +68,11 @@ const extract = async () => {
   console.timeEnd("yarn - Extract")
 }
 
-export const syncYarn = async () => {
+export const syncYarn = async (): Promise<{ shouldUpload: boolean }> => {
   const existsLocally = fs.existsSync(tarFilePath)
   if (existsLocally) {
     console.log("yarn - Locally Cached")
-    return
+    return { shouldUpload: false }
   }
 
   const isOnS3 = await getIsOnS3()
@@ -82,10 +82,12 @@ export const syncYarn = async () => {
     await download()
     console.timeEnd("yarn - Download")
     await extract()
+    return { shouldUpload: false }
   } else {
     console.log("yarn - Run")
     console.time("yarn - Run")
     await runYarn()
     console.timeEnd("yarn - Run")
+    return { shouldUpload: true }
   }
 }
