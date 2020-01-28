@@ -18,7 +18,9 @@ const runYarn = async (): Promise<void> => {
   await execa("yarn", { stdout: "inherit", preferLocal: true, cwd: root })
 }
 
-const upload = async (): Promise<void> => {
+export const uploadYarn = async (): Promise<void> => {
+  console.log("yarn - Upload")
+  console.time("yarn - Upload")
   const files = await fg(
     ["./node_modules/**/*", "./packages/node_modules/**/*"],
     { cwd: root, onlyFiles: true },
@@ -39,6 +41,7 @@ const upload = async (): Promise<void> => {
     Key: tarFileName,
     Body: body,
   }).promise()
+  console.timeEnd("yarn - Upload")
 }
 
 const getIsOnS3 = async (): Promise<boolean> => {
@@ -84,10 +87,5 @@ export const syncYarn = async () => {
     console.time("yarn - Run")
     await runYarn()
     console.timeEnd("yarn - Run")
-
-    console.log("yarn - Upload")
-    console.time("yarn - Upload")
-    await upload()
-    console.timeEnd("yarn - Upload")
   }
 }

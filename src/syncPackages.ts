@@ -40,7 +40,7 @@ const extractPackage = async ({ name, filePath, location }: PackageInfo) => {
   console.timeEnd(`${name} - Extract`)
 }
 
-export const syncPackages = async () => {
+export const syncPackages = async (): Promise<void> => {
   const cachedPackages: string[] = []
 
   const packageHashes = await getPackageHashes()
