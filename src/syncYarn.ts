@@ -24,7 +24,7 @@ const upload = async (): Promise<void> => {
     { cwd: root, onlyFiles: true },
   )
   const writeStream = fs.createWriteStream(tarFilePath)
-  return new Promise((resolve, reject) =>
+  await new Promise((resolve, reject) =>
     tar
       .pack(root, {
         entries: files,
@@ -33,6 +33,12 @@ const upload = async (): Promise<void> => {
       .on("error", reject)
       .on("close", resolve),
   )
+  const body = await fs.readFile(tarFilePath)
+  await S3.upload({
+    Bucket: BUCKET_NAME,
+    Key: tarFileName,
+    Body: body,
+  }).promise()
 }
 
 const getIsOnS3 = async (): Promise<boolean> => {
