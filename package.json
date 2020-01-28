@@ -41,6 +41,7 @@
     "filesize": "^6.0.1",
     "find-yarn-workspace-root": "^1.2.1",
     "fs-extra": "^8.1.0",
+    "hard-rejection": "^2.1.0",
     "object-hash": "^2.0.1",
     "prettier": "^1.19.1",
     "typescript": "^3.7.5"
