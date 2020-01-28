@@ -10,8 +10,6 @@ export const downloadFromS3 = ({
   to: string
 }): Promise<void> => {
   const file = fs.createWriteStream(to)
-  // Attempt to download the file.
-  // Will throw if it's not there.
   return new Promise((resolve, reject) =>
     S3.getObject({
       Bucket: BUCKET_NAME,

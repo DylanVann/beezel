@@ -53,6 +53,7 @@ export const syncPackages = async (): Promise<void> => {
       const existsLocally = getExistsInLocalCache(info)
       if (existsLocally) {
         console.log(`${name} - Locally Cached`)
+        await extractPackage(info)
         cachedPackages.push(name)
         return
       }

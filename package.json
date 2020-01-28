@@ -20,7 +20,7 @@
     "beezel": "dist/index.js"
   },
   "scripts": {
-    "build": "ncc build src/index.ts --minify",
+    "build": "ncc build src/index.ts",
     "format": "prettier src/**/*.ts --write",
     "test": "echo \"yolo\" && exit 0"
   },
