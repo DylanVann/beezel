@@ -1,6 +1,5 @@
-import "loud-rejection/register"
 import path from "path"
-import { packageHashes, PackageInfo } from "./packageHashes"
+import { getPackageHashes, PackageInfo } from "./getPackageHashes"
 import { S3 } from "./s3Client"
 import { BUCKET_NAME } from "./env"
 import fs from "fs-extra"
@@ -43,6 +42,8 @@ const extractPackage = async ({ name, filePath, location }: PackageInfo) => {
 
 export const syncPackages = async () => {
   const cachedPackages: string[] = []
+
+  const packageHashes = await getPackageHashes()
 
   console.time("Download Packages")
   await Promise.all(
