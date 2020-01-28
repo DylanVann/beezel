@@ -8,8 +8,6 @@ import { root, cacheDir } from "./paths"
 
 export interface PackageInfo {
   location: string
-  hash: string
-  slug: string
   name: string
   fileName: string
   filePath: string
@@ -61,12 +59,10 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
         .map(depName => packageHashes[depName])
       const hash = objectHash([hashOfFiles, depsHashes, globalHash])
       const slug = path.relative(path.join(root, "packages"), cwd)
-      const fileName = `${slug}-${hash}.tar`
+      const fileName = `${slug}-${hash}-v2.tar`
       const filePath = path.join(cacheDir, fileName)
       packageHashes[packageInfo.name] = {
         location: cwd,
-        hash,
-        slug,
         fileName,
         filePath,
         name: packageInfo.name,

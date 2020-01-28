@@ -11,11 +11,14 @@ import execa from "execa"
 import { root } from "./paths"
 import { downloadFromS3 } from "./downloadFromS3"
 
-const tarFileName = `yarn-${yarnHash}.tar`
+const tarFileName = `yarn-${yarnHash}-v2.tar`
 const tarFilePath = path.join(cacheDir, tarFileName)
 
 const runYarn = async (): Promise<void> => {
+  console.log("yarn - Run")
+  console.time("yarn - Run")
   await execa("yarn", { stdout: "inherit", preferLocal: true, cwd: root })
+  console.timeEnd("yarn - Run")
 }
 
 export const uploadYarn = async (): Promise<void> => {
@@ -23,7 +26,7 @@ export const uploadYarn = async (): Promise<void> => {
   console.time("yarn - Upload")
   const files = await fg(
     ["./node_modules/**/*", "./packages/node_modules/**/*"],
-    { cwd: root, onlyFiles: true },
+    { cwd: root, onlyFiles: true, absolute: true },
   )
   const writeStream = fs.createWriteStream(tarFilePath)
   await new Promise((resolve, reject) =>
@@ -55,7 +58,10 @@ const getIsOnS3 = async (): Promise<boolean> => {
 }
 
 const download = async (): Promise<void> => {
+  console.log("yarn - Download")
+  console.time("yarn - Download")
   await downloadFromS3({ key: tarFileName, to: tarFilePath })
+  console.timeEnd("yarn - Download")
 }
 
 const extract = async () => {
@@ -77,17 +83,10 @@ export const syncYarn = async (): Promise<{ shouldUpload: boolean }> => {
 
   const isOnS3 = await getIsOnS3()
   if (isOnS3) {
-    console.log("yarn - Download")
-    console.time("yarn - Download")
     await download()
-    console.timeEnd("yarn - Download")
     await extract()
-    return { shouldUpload: false }
   }
 
-  console.log("yarn - Run")
-  console.time("yarn - Run")
   await runYarn()
-  console.timeEnd("yarn - Run")
   return { shouldUpload: !isOnS3 }
 }
