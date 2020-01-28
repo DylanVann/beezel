@@ -4,7 +4,7 @@ import fs from "fs-extra"
 import objectHash from "object-hash"
 import execa from "execa"
 import { globalHash } from "./globalHash"
-import { root } from "./paths"
+import { root, cacheDir } from "./paths"
 
 // We need a list of packages in topological order.
 // This is because we need to compute hashes for dependencies before dependents.
@@ -24,12 +24,13 @@ const packageInfos: { location: string; name: string }[] = JSON.parse(
   packagesJson,
 )
 
-interface PackageInfo {
+export interface PackageInfo {
   location: string
   hash: string
   slug: string
   name: string
   fileName: string
+  filePath: string
 }
 
 export const packageHashes: { [key: string]: PackageInfo } = {}
@@ -56,11 +57,14 @@ packageInfos.forEach(packageInfo => {
     .map(depName => packageHashes[depName])
   const hash = objectHash([hashOfFiles, depsHashes, globalHash])
   const slug = path.relative(path.join(root, "packages"), cwd)
+  const fileName = `${slug}-${hash}.tar`
+  const filePath = path.join(cacheDir, fileName)
   packageHashes[packageInfo.name] = {
     location: cwd,
     hash,
     slug,
-    fileName: `${slug}-${hash}.tar`,
+    fileName,
+    filePath,
     name: packageInfo.name,
   }
 })
