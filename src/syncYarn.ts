@@ -59,7 +59,7 @@ const download = async (): Promise<void> => {
 }
 
 const extract = async () => {
-  console.time("yarn - Extract")
+  console.log("yarn - Extract")
   console.time("yarn - Extract")
   await extractTar({
     from: tarFilePath,
