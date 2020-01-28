@@ -6,12 +6,12 @@ import { yarnHash } from "./yarnHash"
 import { cacheDir } from "./paths"
 import { extractTar } from "./extractTar"
 import { S3 } from "./s3Client"
-import { BUCKET_NAME } from "./env"
+import { BUCKET_NAME, CACHE_KEY } from "./env"
 import execa from "execa"
 import { root } from "./paths"
 import { downloadFromS3 } from "./downloadFromS3"
 
-const tarFileName = `yarn-${yarnHash}-v2.tar`
+const tarFileName = `yarn-${yarnHash}-${CACHE_KEY}.tar`
 const tarFilePath = path.join(cacheDir, tarFileName)
 
 const runYarn = async (): Promise<void> => {
