@@ -83,11 +83,11 @@ export const syncYarn = async (): Promise<{ shouldUpload: boolean }> => {
     console.timeEnd("yarn - Download")
     await extract()
     return { shouldUpload: false }
-  } else {
-    console.log("yarn - Run")
-    console.time("yarn - Run")
-    await runYarn()
-    console.timeEnd("yarn - Run")
-    return { shouldUpload: true }
   }
+
+  console.log("yarn - Run")
+  console.time("yarn - Run")
+  await runYarn()
+  console.timeEnd("yarn - Run")
+  return { shouldUpload: !isOnS3 }
 }
