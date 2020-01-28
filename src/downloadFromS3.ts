@@ -1,5 +1,6 @@
 import fs from "fs"
-import { S3, BUCKET_NAME } from "./s3Client"
+import { S3 } from "./s3Client"
+import { BUCKET_NAME } from "./env"
 
 export const downloadFromS3 = ({
   key,

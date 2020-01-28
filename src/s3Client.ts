@@ -1,10 +1,6 @@
 import AWS from "aws-sdk"
 import http from "http"
-
-const ID = process.env.AWS_ID
-const SECRET = process.env.AWS_SECRET
-
-export const BUCKET_NAME = "build-cache-23123"
+import { ID, SECRET } from "./env"
 
 AWS.config.update({
   httpOptions: {
