@@ -21,7 +21,7 @@ Use these environment variables to configure Beezel.
 # Beezel needs credentials for AWS S3 access.
 BEEZEL_AWS_ID="Your id."
 BEEZEL_AWS_SECRET="Your secret."
-BEEZEL_AWS_S3_BUCKET_NAME="Your bucket name."
+BEEZEL_AWS_BUCKET="Your bucket name."
 # This can be used to cache bust Beezel.
 BEEZEL_CACHE_KEY="v2"
 ```

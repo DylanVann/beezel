@@ -12,7 +12,7 @@ export const downloadFromS3 = ({
   const file = fs.createWriteStream(to)
   return new Promise((resolve, reject) =>
     S3.getObject({
-      Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
+      Bucket: env.BEEZEL_AWS_BUCKET,
       Key: key,
     })
       .on("httpData", (chunk: any) => file.write(chunk))

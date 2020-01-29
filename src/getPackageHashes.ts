@@ -68,7 +68,8 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
         return hashOfDep
       })
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
-    const slug = path.relative(path.join(root, "packages"), cwd)
+    // Slugify scoped package names.
+    const slug = packageInfo.name.replace("@", "").replace("/", "__")
     const fileName = `${slug}-${hash}-${env.BEEZEL_CACHE_KEY}.tar`
     const filePath = path.join(cacheDir, fileName)
     packageHashes[packageInfo.name] = {

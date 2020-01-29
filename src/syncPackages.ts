@@ -26,7 +26,7 @@ const getExistsInRemoteCache = async ({
 }: PackageInfo): Promise<boolean> => {
   try {
     await S3.headObject({
-      Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
+      Bucket: env.BEEZEL_AWS_BUCKET,
       Key: fileName,
     }).promise()
     return true
@@ -99,7 +99,7 @@ const uploadPackage = async (info: PackageInfo) => {
   console.log(message)
   console.time(message)
   await S3.upload({
-    Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
+    Bucket: env.BEEZEL_AWS_BUCKET,
     Key: fileName,
     Body: body,
   }).promise()
@@ -161,13 +161,13 @@ export const syncPackages = async (): Promise<void> => {
     })
     console.timeEnd("Build")
   } catch (e) {
+    // Lerna errors if all packages are filtered out.
     const allCached = e.stderr.includes("No packages remain after filtering")
     if (allCached) {
-      // eslint-disable-next-line no-console
       console.log("Everything was cached!")
     } else {
-      // eslint-disable-next-line no-console
-      console.log("Error:", e)
+      // If that was not the issue then just throw.
+      throw e
     }
   }
 
