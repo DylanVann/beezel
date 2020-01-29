@@ -50,23 +50,10 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
       ...pkgJson.dependencies,
       ...pkgJson.devDependencies,
     })
-      .filter(
-        name =>
-          name.startsWith("@activeviam") ||
-          name === "eslint-config-activeui" ||
-          name === "eslint-plugin-activeui",
-      )
       // Since we're doing this in topological order
-      // There should be a hash calculated already for dependencies.
-      .map(depName => {
-        const hashOfDep: string = packageHashes[depName].fileName
-        if (!hashOfDep) {
-          throw new Error(
-            `Something went wrong. Could not get hash of "${depName}".`,
-          )
-        }
-        return hashOfDep
-      })
+      // There should be a hash calculated already for internal dependencies.
+      .filter(name => packageHashes[name])
+      .map(name => packageHashes[name].fileName)
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace("@", "").replace("/", "__")
