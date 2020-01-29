@@ -1,7 +1,9 @@
 import AWS from "aws-sdk"
-import { ID, SECRET } from "./env"
+import { env } from "./env"
 
 export const S3 = new AWS.S3({
-  accessKeyId: ID,
-  secretAccessKey: SECRET,
+  credentials: {
+    accessKeyId: env.BEEZEL_AWS_ID,
+    secretAccessKey: env.BEEZEL_AWS_SECRET,
+  },
 })

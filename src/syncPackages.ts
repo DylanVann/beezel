@@ -1,7 +1,7 @@
 import path from "path"
 import { getPackageHashes, PackageInfo } from "./getPackageHashes"
 import { S3 } from "./s3Client"
-import { BUCKET_NAME } from "./env"
+import { env } from "./env"
 import fs from "fs-extra"
 import execa from "execa"
 import { root } from "./paths"
@@ -25,7 +25,10 @@ const getExistsInRemoteCache = async ({
   fileName,
 }: PackageInfo): Promise<boolean> => {
   try {
-    await S3.headObject({ Bucket: BUCKET_NAME, Key: fileName }).promise()
+    await S3.headObject({
+      Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
+      Key: fileName,
+    }).promise()
     return true
   } catch (e) {
     return false

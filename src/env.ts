@@ -1,4 +1,11 @@
-export const ID = process.env.BEEZEL_AWS_ID
-export const SECRET = process.env.BEEZEL_AWS_SECRET
-export const BUCKET_NAME: string = process.env.BEEZEL_AWS_BUCKET as string
-export const CACHE_KEY: string = process.env.BEEZEL_CACHE_KEY || "v1"
+import envalid, { str } from "envalid"
+
+export const env = envalid.cleanEnv(process.env, {
+  BEEZEL_AWS_ID: str({ desc: "AWS ID." }),
+  BEEZEL_AWS_SECRET: str({ desc: "AWS secret." }),
+  BEEZEL_AWS_S3_BUCKET_NAME: str({ desc: "AWS S3 bucket name." }),
+  BEEZEL_CACHE_KEY: str({
+    desc: "Global cache key. Can be used for cache busting.",
+    default: "v1",
+  }),
+})

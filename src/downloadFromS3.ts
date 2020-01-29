@@ -1,6 +1,6 @@
 import fs from "fs"
 import { S3 } from "./s3Client"
-import { BUCKET_NAME } from "./env"
+import { env } from "./env"
 
 export const downloadFromS3 = ({
   key,
@@ -12,7 +12,7 @@ export const downloadFromS3 = ({
   const file = fs.createWriteStream(to)
   return new Promise((resolve, reject) =>
     S3.getObject({
-      Bucket: BUCKET_NAME,
+      Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
       Key: key,
     })
       .on("httpData", (chunk: any) => file.write(chunk))
