@@ -78,7 +78,7 @@ const uploadPackage = async (info: PackageInfo) => {
     .split("\n")
     .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
 
-  if (untrackedArray.length) {
+  if (untrackedArray.length === 0) {
     // An empty file.
     await fs.createFile(filePath)
   } else {
