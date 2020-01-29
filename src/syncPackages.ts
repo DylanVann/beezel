@@ -107,8 +107,7 @@ const uploadPackage = async (info: PackageInfo) => {
 }
 
 export const syncPackages = async (): Promise<void> => {
-  const cachedPackages: string[] = []
-
+  const cachedPackages: { [key: string]: boolean } = {}
   const packageHashes = await getPackageHashes()
   const packageHashesValues = Object.values(packageHashes)
 
@@ -122,7 +121,7 @@ export const syncPackages = async (): Promise<void> => {
     if (existsLocally) {
       console.log(prefix(`Local Cache Hit`))
       await extractPackage(info)
-      cachedPackages.push(info.name)
+      cachedPackages[info.name] = true
       continue
     }
 
@@ -131,7 +130,7 @@ export const syncPackages = async (): Promise<void> => {
       console.log(prefix(`Remote Cache Hit`))
       await getPackageFromRemoteCache(info)
       await extractPackage(info)
-      cachedPackages.push(info.name)
+      cachedPackages[info.name] = true
       continue
     }
 
@@ -143,16 +142,13 @@ export const syncPackages = async (): Promise<void> => {
   console.timeEnd("Download Packages")
   console.log("-----------------------------------")
 
-  const ignoreStatements = cachedPackages.flatMap(name => ["--ignore", name])
+  const buildPackages = packageHashesValues
+    .filter(v => !cachedPackages[v.name])
+    .map(v => v.name)
+  const scopeArgs = buildPackages.flatMap(name => ["--scope", name])
   try {
     console.time("Build")
-    const args = [
-      "run",
-      "build",
-      "--stream",
-      "--reject-cycles",
-      ...ignoreStatements,
-    ]
+    const args = ["run", "build", "--stream", "--reject-cycles", ...scopeArgs]
     console.log(`lerna ${args.join(" ")}`)
     await execa("lerna", args, {
       stdout: "inherit",
@@ -174,6 +170,9 @@ export const syncPackages = async (): Promise<void> => {
   console.log("-----------------------------------")
   console.time("Upload Packages")
   for (const info of packageHashesValues) {
+    if (cachedPackages[info.name]) {
+      continue
+    }
     await uploadPackage(info)
   }
   console.timeEnd("Upload Packages")
