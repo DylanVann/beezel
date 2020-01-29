@@ -3,7 +3,7 @@ import { getPackageDeps } from "@microsoft/package-deps-hash"
 import fs from "fs-extra"
 import objectHash from "object-hash"
 import execa from "execa"
-import { globalHash } from "./globalHash"
+import { getGlobalHash } from "./getGlobalHash"
 import { root, cacheDir } from "./paths"
 import { env } from "env"
 
@@ -17,6 +17,7 @@ export interface PackageInfo {
 type InfoMap = { [key: string]: PackageInfo }
 
 export const getPackageHashes = async (): Promise<InfoMap> => {
+  const globalHash = await getGlobalHash()
   // We need a list of packages in topological order.
   // This is because we need to compute hashes for dependencies before dependents.
   // Then the hash of a dependent can take into account the hash of its dependencies.
