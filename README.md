@@ -4,8 +4,7 @@ Remote build caching for JS monorepos.
 
 ## Prerequisits
 
-You should have a yarn workspaces project where packages are contained in `packages/*`.
-This is currently the only structure Beezel supports.
+- Beezel supports Yarn workspaces / Lerna (using Yarn workspaces).
 
 ## Installation
 
