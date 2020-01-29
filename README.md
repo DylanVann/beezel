@@ -19,12 +19,11 @@ Use these environment variables to configure Beezel.
 
 ```bash
 # Beezel needs credentials for AWS S3 access.
-BEEZEL_AWS_TOKEN="Your token."
-# You will need to create this bucket.
-# It's recommended that you add a lifecycle rule to delete stale files.
-# Or the size of the remote cache will grow indefinitely.
-# It is also recommended to configure the bucket so it will be as fast as possible.
-BEEZEL_AWS_BUCKET="Your bucket."
+BEEZEL_AWS_ID="Your id."
+BEEZEL_AWS_SECRET="Your secret."
+BEEZEL_AWS_S3_BUCKET_NAME="Your bucket name."
+# This can be used to cache bust Beezel.
+BEEZEL_CACHE_KEY="v2"
 ```
 
 ## Usage
