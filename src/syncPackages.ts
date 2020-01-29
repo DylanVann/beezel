@@ -99,7 +99,7 @@ const uploadPackage = async (info: PackageInfo) => {
   console.log(message)
   console.time(message)
   await S3.upload({
-    Bucket: BUCKET_NAME,
+    Bucket: env.BEEZEL_AWS_S3_BUCKET_NAME,
     Key: fileName,
     Body: body,
   }).promise()
