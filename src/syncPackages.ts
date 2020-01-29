@@ -2,7 +2,7 @@ import path from "path"
 import { getPackageHashes, PackageInfo } from "./getPackageHashes"
 import { S3 } from "./s3Client"
 import { env } from "./env"
-import fs from "fs-extra"
+import fs, { Stats } from "fs-extra"
 import execa from "execa"
 import { root } from "./paths"
 import { extractTar } from "./extractTar"
@@ -12,12 +12,12 @@ import filesize from "filesize"
 
 const getExistsInLocalCache = async ({
   filePath,
-}: PackageInfo): Promise<boolean> => {
+}: PackageInfo): Promise<Stats | undefined> => {
   try {
-    await fs.stat(filePath)
-    return true
+    const stats = await fs.stat(filePath)
+    return stats
   } catch (e) {
-    return false
+    return undefined
   }
 }
 
@@ -78,19 +78,20 @@ const uploadPackage = async (info: PackageInfo) => {
     .split("\n")
     .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
 
-  if (!untrackedArray.length) {
-    console.log(prefix("Has No Files"))
-    return
+  if (untrackedArray.length) {
+    // An empty file.
+    await fs.createFile(filePath)
+  } else {
+    const writeStream = fs.createWriteStream(filePath)
+    await new Promise((resolve, reject) =>
+      tar
+        .pack(cwd, { entries: untrackedArray, dereference: true })
+        .pipe(writeStream)
+        .on("error", reject)
+        .on("close", resolve),
+    )
   }
 
-  const writeStream = fs.createWriteStream(filePath)
-  await new Promise((resolve, reject) =>
-    tar
-      .pack(cwd, { entries: untrackedArray, dereference: true })
-      .pipe(writeStream)
-      .on("error", reject)
-      .on("close", resolve),
-  )
   const body = await fs.readFile(filePath)
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
@@ -109,9 +110,13 @@ const uploadPackage = async (info: PackageInfo) => {
 export const syncPackages = async (): Promise<void> => {
   const cachedPackages: { [key: string]: boolean } = {}
   const packageHashes = await getPackageHashes()
-  const packageHashesValues = Object.values(packageHashes)
+  const packageHashesValues = Object.values(packageHashes).filter(
+    info => info.hasBuildStep,
+  )
 
   console.log("-----------------------------------")
+
+  console.log("Download Packages")
   console.time("Download Packages")
   for (const info of packageHashesValues) {
     const prefix = (message: string) =>
@@ -140,14 +145,16 @@ export const syncPackages = async (): Promise<void> => {
     console.log(prefix(`Cache Miss`))
   }
   console.timeEnd("Download Packages")
+
   console.log("-----------------------------------")
 
+  console.log("Build")
+  console.time("Build")
   const buildPackages = packageHashesValues
     .filter(v => !cachedPackages[v.name])
     .map(v => v.name)
   const scopeArgs = buildPackages.flatMap(name => ["--scope", name])
-  try {
-    console.time("Build")
+  if (buildPackages.length) {
     const args = ["run", "build", "--stream", "--reject-cycles", ...scopeArgs]
     console.log(`lerna ${args.join(" ")}`)
     await execa("lerna", args, {
@@ -155,19 +162,14 @@ export const syncPackages = async (): Promise<void> => {
       preferLocal: true,
       cwd: root,
     })
-    console.timeEnd("Build")
-  } catch (e) {
-    // Lerna errors if all packages are filtered out.
-    const allCached = e.stderr.includes("No packages remain after filtering")
-    if (allCached) {
-      console.log("Everything was cached!")
-    } else {
-      // If that was not the issue then just throw.
-      throw e
-    }
+  } else {
+    console.log("Everything was cached!")
   }
+  console.timeEnd("Build")
 
   console.log("-----------------------------------")
+
+  console.log("Upload Packages")
   console.time("Upload Packages")
   for (const info of packageHashesValues) {
     if (cachedPackages[info.name]) {
@@ -176,5 +178,6 @@ export const syncPackages = async (): Promise<void> => {
     await uploadPackage(info)
   }
   console.timeEnd("Upload Packages")
+
   console.log("-----------------------------------")
 }

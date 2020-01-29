@@ -12,6 +12,7 @@ export interface PackageInfo {
   name: string
   fileName: string
   filePath: string
+  hasBuildStep: boolean
 }
 
 type InfoMap = { [key: string]: PackageInfo }
@@ -63,6 +64,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
       location: cwd,
       fileName,
       filePath,
+      hasBuildStep: pkgJson.scripts && pkgJson.scripts.build,
       name: packageInfo.name,
     }
   }
