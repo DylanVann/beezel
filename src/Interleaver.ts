@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license.
 // See LICENSE in the project root for license information.
 
-import * as colors from "colors"
-import * as os from "os"
+import * as colors from 'colors'
+import * as os from 'os'
 
 /**
  * An writable interface for managing output of simultaneous processes.
@@ -67,7 +67,7 @@ export class Interleaver {
     quietMode: boolean = false,
   ): ITaskWriter {
     if (this._tasks.has(taskName)) {
-      throw new Error("A task with that name has already been registered")
+      throw new Error('A task with that name has already been registered')
     }
 
     this._tasks.set(taskName, {
@@ -113,7 +113,7 @@ export class Interleaver {
     const taskInfo: ITaskWriterInfo | undefined = this._tasks.get(taskName)
     if (!taskInfo || taskInfo.state !== TaskWriterState.Open) {
       throw new Error(
-        "The task is not registered or has been completed and written.",
+        'The task is not registered or has been completed and written.',
       )
     }
     const outputBuffer: string[] =
@@ -144,12 +144,12 @@ export class Interleaver {
   ): string {
     const taskInfo: ITaskWriterInfo | undefined = this._tasks.get(taskName)
     if (taskInfo === undefined) {
-      return ""
+      return ''
     }
     return (stream === ITaskOutputStream.stdout
       ? taskInfo.stdout
       : taskInfo.stderr
-    ).join("")
+    ).join('')
   }
 
   /**
@@ -162,7 +162,7 @@ export class Interleaver {
     const taskInfo: ITaskWriterInfo | undefined = this._tasks.get(taskName)
     if (!taskInfo || taskInfo.state !== TaskWriterState.Open) {
       throw new Error(
-        "The task is not registered or has been completed and written.",
+        'The task is not registered or has been completed and written.',
       )
     }
 
@@ -197,8 +197,8 @@ export class Interleaver {
   ): void {
     taskInfo.state = TaskWriterState.Written
     if (!taskInfo.quietMode) {
-      this._stdout.write(taskInfo.stdout.join(""))
+      this._stdout.write(taskInfo.stdout.join(''))
     }
-    this._stdout.write(colors.red(taskInfo.stderr.join("")))
+    this._stdout.write(colors.red(taskInfo.stderr.join('')))
   }
 }

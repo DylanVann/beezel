@@ -1,17 +1,17 @@
-import path from "path"
-import { getPackageHashes, PackageInfo } from "./getPackageHashes"
-import { S3 } from "./s3Client"
-import { env } from "./env"
-import fs, { Stats } from "fs-extra"
-import execa from "execa"
-import { root } from "./paths"
-import { extractTar } from "./extractTar"
-import { downloadFromS3 } from "./downloadFromS3"
-import tar from "@dylanvann/tar-fs"
-import filesize from "filesize"
-import { Interleaver, ITaskWriter } from "./Interleaver"
-import chalk from "chalk"
-import { HeadObjectOutput } from "aws-sdk/clients/s3"
+import path from 'path'
+import { getPackageHashes, PackageInfo } from './getPackageHashes'
+import { S3 } from './s3Client'
+import { env } from './env'
+import fs, { Stats } from 'fs-extra'
+import execa from 'execa'
+import { root } from './paths'
+import { extractTar } from './extractTar'
+import { downloadFromS3 } from './downloadFromS3'
+import tar from '@dylanvann/tar-fs'
+import filesize from 'filesize'
+import { Interleaver, ITaskWriter } from './Interleaver'
+import chalk from 'chalk'
+import { HeadObjectOutput } from 'aws-sdk/clients/s3'
 
 const getExistsInLocalCache = async ({
   filePath,
@@ -48,7 +48,7 @@ const getPackageFromRemoteCache = async (
   writer: PackageWriter,
 ) => {
   const info = await getExistsInRemoteCache(fileName)
-  if (!info) throw new Error("Does not exists in remote cache.")
+  if (!info) throw new Error('Does not exists in remote cache.')
   const size = filesize(info.ContentLength || 0)
   writer.log(`Download (${size})`)
   const start = Date.now()
@@ -60,7 +60,7 @@ const extractPackage = async (
   { filePath, location }: PackageInfo,
   writer: PackageWriter,
 ) => {
-  writer.log("Extract")
+  writer.log('Extract')
   const start = Date.now()
   await extractTar({
     from: filePath,
@@ -75,15 +75,15 @@ const uploadPackage = async (info: PackageInfo, writer: PackageWriter) => {
 
   const existsInRemoteCache = await getExistsInRemoteCache(info.fileName)
   if (existsInRemoteCache) {
-    writer.log("Already Uploaded")
+    writer.log('Already Uploaded')
     return
   }
 
   // It's not on S3, time to tar it and upload.
-  const untracked = execa.sync("git", ["ls-files", "-o"], { cwd }).stdout
+  const untracked = execa.sync('git', ['ls-files', '-o'], { cwd }).stdout
   const untrackedArray = untracked
-    .split("\n")
-    .filter(v => !v.startsWith("node_modules") && !v.startsWith("."))
+    .split('\n')
+    .filter(v => !v.startsWith('node_modules') && !v.startsWith('.'))
 
   if (untrackedArray.length === 0) {
     // An empty file.
@@ -94,8 +94,8 @@ const uploadPackage = async (info: PackageInfo, writer: PackageWriter) => {
       tar
         .pack(cwd, { entries: untrackedArray, dereference: true })
         .pipe(writeStream)
-        .on("error", reject)
-        .on("close", resolve),
+        .on('error', reject)
+        .on('close', resolve),
     )
   }
 
@@ -113,12 +113,12 @@ const uploadPackage = async (info: PackageInfo, writer: PackageWriter) => {
   writer.log(`Uploaded (${sizeString}) in ${Date.now() - start}ms`)
 }
 const colorWheel: string[] = [
-  "cyan",
-  "magenta",
-  "blue",
-  "yellow",
-  "green",
-  "red",
+  'cyan',
+  'magenta',
+  'blue',
+  'yellow',
+  'green',
+  'red',
 ]
 let currentColor = 0
 const getNextColor = (): string =>
@@ -151,16 +151,16 @@ export const syncPackages = async (): Promise<void> => {
     }),
   )
 
-  console.log("-----------------------------------")
+  console.log('-----------------------------------')
 
-  console.log("Download Packages")
-  console.time("Download Packages")
+  console.log('Download Packages')
+  console.time('Download Packages')
   await Promise.all(
     packageHashesValues.map(async info => {
       const writer = writers[info.name]
       const existsLocally = await getExistsInLocalCache(info)
       if (existsLocally) {
-        writer.log("Local Cache Hit")
+        writer.log('Local Cache Hit')
         await extractPackage(info, writer)
         cachedPackages[info.name] = true
         writer.close()
@@ -169,7 +169,7 @@ export const syncPackages = async (): Promise<void> => {
 
       const existsRemotely = await getExistsInRemoteCache(info.fileName)
       if (existsRemotely) {
-        writer.log("Remote Cache Hit")
+        writer.log('Remote Cache Hit')
         await getPackageFromRemoteCache(info, writer)
         await extractPackage(info, writer)
         cachedPackages[info.name] = true
@@ -184,33 +184,33 @@ export const syncPackages = async (): Promise<void> => {
       writer.close()
     }),
   )
-  console.timeEnd("Download Packages")
+  console.timeEnd('Download Packages')
 
-  console.log("-----------------------------------")
+  console.log('-----------------------------------')
 
-  console.log("Build")
-  console.time("Build")
+  console.log('Build')
+  console.time('Build')
   const buildPackages = packageHashesValues
     .filter(v => !cachedPackages[v.name])
     .map(v => v.name)
-  const scopeArgs = buildPackages.flatMap(name => ["--scope", name])
+  const scopeArgs = buildPackages.flatMap(name => ['--scope', name])
   if (buildPackages.length) {
-    const args = ["run", "build", "--stream", "--reject-cycles", ...scopeArgs]
-    console.log(`lerna ${args.join(" ")}`)
-    await execa("lerna", args, {
-      stdout: "inherit",
+    const args = ['run', 'build', '--stream', '--reject-cycles', ...scopeArgs]
+    console.log(`lerna ${args.join(' ')}`)
+    await execa('lerna', args, {
+      stdout: 'inherit',
       preferLocal: true,
       cwd: root,
     })
   } else {
-    console.log("Everything was cached!")
+    console.log('Everything was cached!')
   }
-  console.timeEnd("Build")
+  console.timeEnd('Build')
 
-  console.log("-----------------------------------")
+  console.log('-----------------------------------')
 
-  console.log("Upload Packages")
-  console.time("Upload Packages")
+  console.log('Upload Packages')
+  console.time('Upload Packages')
   await Promise.all(
     packageHashesValues.map(async info => {
       if (cachedPackages[info.name]) {
@@ -220,7 +220,7 @@ export const syncPackages = async (): Promise<void> => {
       await uploadPackage(info, writer)
     }),
   )
-  console.timeEnd("Upload Packages")
+  console.timeEnd('Upload Packages')
 
-  console.log("-----------------------------------")
+  console.log('-----------------------------------')
 }

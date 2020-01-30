@@ -26,7 +26,8 @@
   },
   "prettier": {
     "semi": false,
-    "trailingComma": "all"
+    "trailingComma": "all",
+    "singleQuote": true
   },
   "devDependencies": {
     "@dylanvann/tar-fs": "^2.0.1",

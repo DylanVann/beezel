@@ -1,5 +1,5 @@
-import fs from "fs"
-import tar from "@dylanvann/tar-fs"
+import fs from 'fs'
+import tar from '@dylanvann/tar-fs'
 
 export const extractTar = ({
   from,
@@ -12,7 +12,7 @@ export const extractTar = ({
     fs.createReadStream(from).pipe(
       tar
         .extract(to)
-        .on("error", reject)
-        .on("finish", resolve),
+        .on('error', reject)
+        .on('finish', resolve),
     ),
   )

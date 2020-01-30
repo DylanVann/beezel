@@ -1,11 +1,11 @@
-import path from "path"
-import { getPackageDeps } from "@microsoft/package-deps-hash"
-import fs from "fs-extra"
-import objectHash from "object-hash"
-import execa from "execa"
-import { getGlobalHash } from "./getGlobalHash"
-import { root, cacheDir } from "./paths"
-import { env } from "env"
+import path from 'path'
+import { getPackageDeps } from '@microsoft/package-deps-hash'
+import fs from 'fs-extra'
+import objectHash from 'object-hash'
+import execa from 'execa'
+import { getGlobalHash } from './getGlobalHash'
+import { root, cacheDir } from './paths'
+import { env } from 'env'
 
 export interface PackageInfo {
   location: string
@@ -28,8 +28,8 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
   // External dependency changes trigger version and yarn.lock file changes, which are accounted
   // for, so they are not relevant to this.
   const { stdout: packagesJson } = await execa(
-    "lerna",
-    ["ls", "--all", "--toposort", "--json"],
+    'lerna',
+    ['ls', '--all', '--toposort', '--json'],
     { preferLocal: true, cwd: root },
   )
 
@@ -46,7 +46,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
     // Hash of just the files in this package.
     // We still need to take into account the global hash, and hashes of dependencies.
     const hashOfFiles = objectHash(hashObject)
-    const pkgJson = await fs.readJson(path.join(cwd, "package.json"))
+    const pkgJson = await fs.readJson(path.join(cwd, 'package.json'))
     const depsHashes = Object.keys({
       ...pkgJson.dependencies,
       ...pkgJson.devDependencies,
@@ -57,7 +57,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
       .map(name => packageHashes[name].fileName)
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
-    const slug = packageInfo.name.replace("@", "").replace("/", "__")
+    const slug = packageInfo.name.replace('@', '').replace('/', '__')
     const fileName = `${slug}-${hash}-${env.BEEZEL_CACHE_KEY}.tar`
     const filePath = path.join(cacheDir, fileName)
     packageHashes[packageInfo.name] = {

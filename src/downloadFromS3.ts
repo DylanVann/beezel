@@ -1,6 +1,6 @@
-import fs from "fs"
-import { S3 } from "./s3Client"
-import { env } from "./env"
+import fs from 'fs'
+import { S3 } from './s3Client'
+import { env } from './env'
 
 export const downloadFromS3 = ({
   key,
@@ -15,12 +15,12 @@ export const downloadFromS3 = ({
       Bucket: env.BEEZEL_AWS_BUCKET,
       Key: key,
     })
-      .on("httpData", (chunk: any) => file.write(chunk))
-      .on("httpError", (error: any) => {
+      .on('httpData', (chunk: any) => file.write(chunk))
+      .on('httpError', (error: any) => {
         file.end()
         reject(error)
       })
-      .on("httpDone", () => {
+      .on('httpDone', () => {
         file.end()
         resolve()
       })

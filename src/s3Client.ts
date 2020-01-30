@@ -1,5 +1,5 @@
-import AWS from "aws-sdk"
-import { env } from "./env"
+import AWS from 'aws-sdk'
+import { env } from './env'
 
 export const S3 = new AWS.S3({
   credentials: {
