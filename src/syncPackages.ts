@@ -55,7 +55,7 @@ const getExistsInRemoteCache = async (
   }
 }
 
-const getPackageFromRemoteCache = async (
+const readFromRemoteCache = async (
   { fileName, filePath }: PackageInfo,
   writer: PackageWriter,
 ) => {
@@ -68,7 +68,7 @@ const getPackageFromRemoteCache = async (
   writer.log(`Downloaded (${size}) in ${Date.now() - start}ms`)
 }
 
-const extractPackage = async (
+const readFromLocalCache = async (
   { filePath, location }: PackageInfo,
   writer: PackageWriter,
 ) => {
@@ -186,7 +186,7 @@ export const syncPackages = async (): Promise<void> => {
       const existsLocally = await getExistsInLocalCache(info.fileName)
       if (existsLocally) {
         writer.log('Local Cache Hit')
-        await extractPackage(info, writer)
+        await readFromLocalCache(info, writer)
         cachedPackages[info.name] = true
         writer.close()
         return
@@ -195,8 +195,8 @@ export const syncPackages = async (): Promise<void> => {
       const existsRemotely = await getExistsInRemoteCache(info.fileName)
       if (existsRemotely) {
         writer.log('Remote Cache Hit')
-        await getPackageFromRemoteCache(info, writer)
-        await extractPackage(info, writer)
+        await readFromRemoteCache(info, writer)
+        await readFromLocalCache(info, writer)
         cachedPackages[info.name] = true
         writer.close()
         return
