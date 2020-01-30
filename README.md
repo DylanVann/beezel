@@ -23,6 +23,8 @@ BEEZEL_AWS_SECRET="Your secret."
 BEEZEL_AWS_BUCKET="Your bucket name."
 # This can be used to cache bust Beezel.
 BEEZEL_CACHE_KEY="v2"
+# This could speed up S3.
+AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 ```
 
 ## Usage
