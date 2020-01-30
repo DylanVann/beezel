@@ -9,6 +9,9 @@ import { extractTar } from "./extractTar"
 import { downloadFromS3 } from "./downloadFromS3"
 import tar from "@dylanvann/tar-fs"
 import filesize from "filesize"
+import { Interleaver, ITaskWriter } from "./Interleaver"
+import chalk from "chalk"
+import { HeadObjectOutput } from "aws-sdk/clients/s3"
 
 const getExistsInLocalCache = async ({
   filePath,
@@ -21,54 +24,58 @@ const getExistsInLocalCache = async ({
   }
 }
 
-const getExistsInRemoteCache = async ({
-  fileName,
-}: PackageInfo): Promise<boolean> => {
+const existsRemoteCache: { [key: string]: HeadObjectOutput } = {}
+const getExistsInRemoteCache = async (
+  key: string,
+): Promise<HeadObjectOutput | false> => {
+  if (existsRemoteCache[key]) {
+    return existsRemoteCache[key]
+  }
   try {
-    await S3.headObject({
+    const headObject = await S3.headObject({
       Bucket: env.BEEZEL_AWS_BUCKET,
-      Key: fileName,
+      Key: key,
     }).promise()
-    return true
+    existsRemoteCache[key] = headObject
+    return headObject
   } catch (e) {
     return false
   }
 }
 
-const getPackageFromRemoteCache = async ({
-  name,
-  fileName,
-  filePath,
-}: PackageInfo) => {
-  const message = `${name} - ${fileName} - Download`
-  console.time(message)
+const getPackageFromRemoteCache = async (
+  { fileName, filePath }: PackageInfo,
+  writer: PackageWriter,
+) => {
+  const info = await getExistsInRemoteCache(fileName)
+  if (!info) throw new Error("Does not exists in remote cache.")
+  const size = filesize(info.ContentLength || 0)
+  writer.log(`Download (${size})`)
+  const start = Date.now()
   await downloadFromS3({ key: fileName, to: filePath })
-  console.timeEnd(message)
+  writer.log(`Downloaded (${size}) in ${Date.now() - start}ms`)
 }
 
-const extractPackage = async ({
-  name,
-  filePath,
-  fileName,
-  location,
-}: PackageInfo) => {
-  const message = `${name} - ${fileName} - Extract`
-  console.time(message)
+const extractPackage = async (
+  { filePath, location }: PackageInfo,
+  writer: PackageWriter,
+) => {
+  writer.log("Extract")
+  const start = Date.now()
   await extractTar({
     from: filePath,
     to: path.join(root, location),
   })
-  console.timeEnd(message)
+  writer.log(`Extracted in ${Date.now() - start}ms`)
 }
 
-const uploadPackage = async (info: PackageInfo) => {
-  const { name, fileName, filePath, location } = info
+const uploadPackage = async (info: PackageInfo, writer: PackageWriter) => {
+  const { fileName, filePath, location } = info
   const cwd = path.join(root, location)
-  const prefix = (message: string) => `${name} - ${fileName} - ${message}`
 
-  const existsInRemoteCache = await getExistsInRemoteCache(info)
+  const existsInRemoteCache = await getExistsInRemoteCache(info.fileName)
   if (existsInRemoteCache) {
-    console.log(prefix("Already Uploaded"))
+    writer.log("Already Uploaded")
     return
   }
 
@@ -96,15 +103,29 @@ const uploadPackage = async (info: PackageInfo) => {
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
 
-  const message = prefix(`Upload (${sizeString})`)
-  console.log(message)
-  console.time(message)
+  writer.log(`Upload (${sizeString})`)
+  const start = Date.now()
   await S3.upload({
     Bucket: env.BEEZEL_AWS_BUCKET,
     Key: fileName,
     Body: body,
   }).promise()
-  console.timeEnd(message)
+  writer.log(`Uploaded (${sizeString}) in ${Date.now() - start}ms`)
+}
+const colorWheel: string[] = [
+  "cyan",
+  "magenta",
+  "blue",
+  "yellow",
+  "green",
+  "red",
+]
+let currentColor = 0
+const getNextColor = (): string =>
+  colorWheel[currentColor++ % colorWheel.length]
+
+interface PackageWriter extends ITaskWriter {
+  log: (message: string) => void
 }
 
 export const syncPackages = async (): Promise<void> => {
@@ -113,37 +134,56 @@ export const syncPackages = async (): Promise<void> => {
   const packageHashesValues = Object.values(packageHashes).filter(
     info => info.hasBuildStep,
   )
+  Interleaver.setStdOut(process.stdout)
+  const writers: { [key: string]: PackageWriter } = Object.fromEntries(
+    Object.entries(packageHashes).map(([key]) => {
+      const writer = Interleaver.registerTask(key)
+      const colorName = getNextColor()
+      const color: typeof chalk.red = (chalk as any)[colorName] as any
+      return [
+        key,
+        {
+          ...writer,
+          log: (message: string) =>
+            writer.writeLine(`${color.bold(key)}: ${message}`),
+        },
+      ]
+    }),
+  )
 
   console.log("-----------------------------------")
 
   console.log("Download Packages")
   console.time("Download Packages")
-  for (const info of packageHashesValues) {
-    const prefix = (message: string) =>
-      `${info.name} - ${info.fileName} - ${message}`
+  await Promise.all(
+    packageHashesValues.map(async info => {
+      const writer = writers[info.name]
+      const existsLocally = await getExistsInLocalCache(info)
+      if (existsLocally) {
+        writer.log("Local Cache Hit")
+        await extractPackage(info, writer)
+        cachedPackages[info.name] = true
+        writer.close()
+        return
+      }
 
-    const existsLocally = await getExistsInLocalCache(info)
-    if (existsLocally) {
-      console.log(prefix(`Local Cache Hit`))
-      await extractPackage(info)
-      cachedPackages[info.name] = true
-      continue
-    }
+      const existsRemotely = await getExistsInRemoteCache(info.fileName)
+      if (existsRemotely) {
+        writer.log("Remote Cache Hit")
+        await getPackageFromRemoteCache(info, writer)
+        await extractPackage(info, writer)
+        cachedPackages[info.name] = true
+        writer.close()
+        return
+      }
 
-    const existsRemotely = await getExistsInRemoteCache(info)
-    if (existsRemotely) {
-      console.log(prefix(`Remote Cache Hit`))
-      await getPackageFromRemoteCache(info)
-      await extractPackage(info)
-      cachedPackages[info.name] = true
-      continue
-    }
-
-    // It's not in our local cache or in the remote cache, so must be build.
-    // Actually some packages may just not have a build command.
-    // In that case nothing will be uploaded to S3.
-    console.log(prefix(`Cache Miss`))
-  }
+      // It's not in our local cache or in the remote cache, so must be build.
+      // Actually some packages may just not have a build command.
+      // In that case nothing will be uploaded to S3.
+      writer.log(`Cache Miss`)
+      writer.close()
+    }),
+  )
   console.timeEnd("Download Packages")
 
   console.log("-----------------------------------")
@@ -171,12 +211,15 @@ export const syncPackages = async (): Promise<void> => {
 
   console.log("Upload Packages")
   console.time("Upload Packages")
-  for (const info of packageHashesValues) {
-    if (cachedPackages[info.name]) {
-      continue
-    }
-    await uploadPackage(info)
-  }
+  await Promise.all(
+    packageHashesValues.map(async info => {
+      if (cachedPackages[info.name]) {
+        return
+      }
+      const writer = writers[info.name]
+      await uploadPackage(info, writer)
+    }),
+  )
   console.timeEnd("Upload Packages")
 
   console.log("-----------------------------------")
