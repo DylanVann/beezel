@@ -1,3 +1,7 @@
+/**
+ * This is a fork of @microsoft/stream-collator.
+ * That package does not seem to work currently and the documentation is out of date.
+ */
 // Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license.
 // See LICENSE in the project root for license information.
 
