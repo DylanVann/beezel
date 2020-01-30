@@ -15,9 +15,9 @@ export interface PackageInfo {
   hasBuildStep: boolean
 }
 
-type InfoMap = { [key: string]: PackageInfo }
+export type PackageInfoMap = { [key: string]: PackageInfo }
 
-export const getPackageHashes = async (): Promise<InfoMap> => {
+export const getPackageHashes = async (): Promise<PackageInfoMap> => {
   const globalHash = await getGlobalHash()
   // We need a list of packages in topological order.
   // This is because we need to compute hashes for dependencies before dependents.
@@ -37,7 +37,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
     packagesJson,
   )
 
-  const packageHashes: InfoMap = {}
+  const packageHashes: PackageInfoMap = {}
 
   // We cannot do this in parallel.
   for (const packageInfo of packageInfos) {
@@ -58,7 +58,7 @@ export const getPackageHashes = async (): Promise<InfoMap> => {
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace('@', '').replace('/', '__')
-    const fileName = `${slug}-${hash}-${env.BEEZEL_CACHE_KEY}.tar`
+    const fileName = `${slug}-${hash}-${env.BEEZEL_CACHE_KEY}.gz`
     const filePath = path.join(cacheDir, fileName)
     packageHashes[packageInfo.name] = {
       location: cwd,
