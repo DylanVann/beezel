@@ -11,6 +11,7 @@ import execa from 'execa'
 import fg from 'fast-glob'
 import chalk from 'chalk'
 import * as tar from 'tar'
+import { getConfig } from 'getConfig'
 
 export const syncYarn = async (): Promise<void> => {
   const key: string = await getYarnHash()
@@ -57,7 +58,13 @@ export const syncYarn = async (): Promise<void> => {
     cwd: root,
     onlyDirectories: true,
   })
-  const directoriesToCache = ['node_modules', ...packageModulesDirectories]
+  const config = await getConfig()
+  const otherYarnCaches = config.otherYarnCaches || []
+  const directoriesToCache = [
+    'node_modules',
+    ...otherYarnCaches,
+    ...packageModulesDirectories,
+  ]
 
   writer.log('Writing Archive')
   const start = Date.now()
