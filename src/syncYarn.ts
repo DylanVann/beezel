@@ -1,3 +1,4 @@
+import fs from 'fs-extra'
 import path from 'path'
 import { getYarnHash } from './getYarnHash'
 import {
@@ -31,10 +32,19 @@ export const syncYarn = async (): Promise<void> => {
     writer.log(`Extracted in ${Date.now() - start}ms`)
   }
 
+  const runYarn = async () => {
+    await execa('yarn', ['install', '--frozen-lockfile'], {
+      cwd: root,
+      all: true,
+      stdio: 'inherit',
+    })
+  }
+
   const existsLocally = await getExistsInLocalCache(key)
   if (existsLocally) {
     writer.log('Local Cache Hit')
     await extract()
+    await runYarn()
     return
   }
 
@@ -46,20 +56,20 @@ export const syncYarn = async (): Promise<void> => {
       writer,
     })
     await extract()
+    await runYarn()
     return
   }
 
-  await execa('yarn', ['install', '--frozen-lockfile'], {
-    stdio: 'inherit',
-    cwd: root,
-  })
+  await runYarn()
 
   const packageModulesDirectories = await fg('packages/*/node_modules', {
     cwd: root,
     onlyDirectories: true,
   })
   const config = await getConfig()
-  const otherYarnCaches = config.otherYarnCaches || []
+  const otherYarnCaches = (config.otherYarnCaches || []).filter(p =>
+    fs.existsSync(path.join(root, p)),
+  )
   const directoriesToCache = [
     'node_modules',
     ...otherYarnCaches,
