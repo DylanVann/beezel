@@ -48,14 +48,13 @@ export const syncYarn = async (): Promise<void> => {
     return
   }
 
-  await execa('yarn', [], { stdio: 'inherit', cwd: root })
+  await execa('yarn', ['install', '--frozen-lockfile'], { stdio: 'inherit', cwd: root })
 
   const packageModulesDirectories = await fg('packages/*/node_modules', {
     cwd: root,
     onlyDirectories: true,
   })
   const directoriesToCache = [
-    '.cache',
     'node_modules',
     ...packageModulesDirectories,
   ]
