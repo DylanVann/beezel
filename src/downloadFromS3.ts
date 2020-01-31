@@ -9,23 +9,21 @@ export const downloadFromS3 = ({
   key: string
   to: string
 }): Promise<void> => {
-  const file = fs.createWriteStream(to)
   return new Promise((resolve, reject) => {
-    const onError = async () => {
-      await fs.unlink(to)
-      reject()
-    }
-    S3.getObject({
+    const fileStream = fs.createWriteStream(to)
+    const s3Stream = S3.getObject({
       Bucket: env.BEEZEL_AWS_BUCKET,
       Key: key,
+    }).createReadStream()
+    s3Stream.on('error', e => {
+      fileStream.destroy()
+      reject(e)
     })
-      .on('error', onError)
-      .on('httpError', onError)
-      .on('httpData', (chunk: any) => file.write(chunk))
-      .on('httpDone', () => {
-        file.end()
-        resolve()
-      })
-      .send()
+    fileStream.on('error', e => {
+      s3Stream.destroy()
+      reject(e)
+    })
+    fileStream.on('close', resolve)
+    s3Stream.pipe(fileStream)
   })
 }
