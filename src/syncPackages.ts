@@ -11,88 +11,73 @@ import execa from 'execa'
 import { root, cacheDir } from './paths'
 import { downloadFromS3 } from './downloadFromS3'
 import filesize from 'filesize'
-import { Interleaver, ITaskWriter } from './Interleaver'
+import { Interleaver } from './Interleaver'
 import chalk from 'chalk'
 import { HeadObjectOutput } from 'aws-sdk/clients/s3'
-import { writeTar, extractTar } from './tar'
+import { writeTar, extractTar } from './tarUtils'
 import { getGlobalHash } from 'getGlobalHash'
 
-const existsInLocalCacheCache: { [key: string]: Stats | false } = {}
-const getExistsInLocalCache = async (key: string): Promise<Stats | false> => {
-  const value = existsInLocalCacheCache[key]
-  if (value !== undefined) {
-    return existsInLocalCacheCache[key]
-  }
+export const getExistsInLocalCache = async (
+  key: string,
+): Promise<Stats | false> => {
   try {
     const stats = await fs.stat(path.join(cacheDir, key))
-    existsInLocalCacheCache[key] = stats
     return stats
   } catch (e) {
-    existsInLocalCacheCache[key] = false
     return false
   }
 }
 
-const existsInRemoteCacheCache: {
-  [key: string]: HeadObjectOutput | false
-} = {}
-const getExistsInRemoteCache = async (
+export const getExistsInRemoteCache = async (
   key: string,
 ): Promise<HeadObjectOutput | false> => {
-  const value = existsInRemoteCacheCache[key]
-  if (value !== undefined) {
-    return value
-  }
   try {
     const headObject = await S3.headObject({
       Bucket: env.BEEZEL_AWS_BUCKET,
       Key: key,
     }).promise()
-    existsInRemoteCacheCache[key] = headObject
     return headObject
   } catch (e) {
-    existsInRemoteCacheCache[key] = false
     return false
   }
 }
 
-const readFromRemoteCache = async (
-  { fileName, filePath }: PackageInfo,
-  writer: PackageWriter,
-) => {
-  const info = await getExistsInRemoteCache(fileName)
+export const readFromRemoteCache = async ({
+  key,
+  writer,
+}: {
+  key: string
+  writer: PackageWriter
+}) => {
+  const info = await getExistsInRemoteCache(key)
   if (!info) throw new Error('Does not exists in remote cache.')
   const size = filesize(info.ContentLength || 0)
   writer.log(`Download (${size})`)
   const start = Date.now()
-  await downloadFromS3({ key: fileName, to: filePath })
+  await downloadFromS3({ key, to: path.join(cacheDir, key) })
   writer.log(`Downloaded (${size}) in ${Date.now() - start}ms`)
 }
 
-const readFromLocalCache = async (
-  { filePath, location }: PackageInfo,
-  writer: PackageWriter,
-) => {
+export const readFromLocalCache = async ({
+  key,
+  to,
+  writer,
+}: {
+  key: string
+  to: string
+  writer: PackageWriter
+}) => {
   writer.log('Extract')
   const start = Date.now()
   await extractTar({
-    from: filePath,
-    to: path.join(root, location),
+    from: key,
+    to: to,
   })
   writer.log(`Extracted in ${Date.now() - start}ms`)
 }
 
-const writeToLocalCache = async (
-  info: PackageInfo,
-  writer: PackageWriter,
-): Promise<void> => {
-  const existsInLocalCache = await getExistsInLocalCache(info.fileName)
-  if (existsInLocalCache) {
-    writer.log('Already Locally Cached')
-    return undefined
-  }
-
-  const { filePath, location } = info
+const writePackageToLocalCache = async (info: PackageInfo): Promise<void> => {
+  const { hash, location } = info
   const cwd = path.join(root, location)
 
   // It's not on S3, time to tar it and upload.
@@ -103,23 +88,24 @@ const writeToLocalCache = async (
 
   if (untrackedArray.length === 0) {
     // An empty file.
-    await fs.createFile(filePath)
+    await fs.createFile(path.join(cacheDir, hash))
   } else {
-    await writeTar({ entries: untrackedArray, cwd, path: filePath })
+    await writeTar({
+      entries: untrackedArray,
+      cwd,
+      path: path.join(cacheDir, hash),
+    })
   }
 }
 
-const writeToRemoteCache = async (
-  info: PackageInfo,
-  writer: PackageWriter,
-): Promise<void> => {
-  const existsInRemoteCache = await getExistsInRemoteCache(info.fileName)
-  if (existsInRemoteCache) {
-    writer.log('Already Remotely Cached')
-    return undefined
-  }
-
-  const { filePath, fileName } = info
+export const writeToRemoteCache = async ({
+  key,
+  writer,
+}: {
+  key: string
+  writer: PackageWriter
+}): Promise<void> => {
+  const filePath = path.join(cacheDir, key)
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
   const body = await fs.readFile(filePath)
@@ -127,7 +113,7 @@ const writeToRemoteCache = async (
   const start = Date.now()
   await S3.upload({
     Bucket: env.BEEZEL_AWS_BUCKET,
-    Key: fileName,
+    Key: key,
     Body: body,
   }).promise()
   writer.log(`Uploaded (${sizeString}) in ${Date.now() - start}ms`)
@@ -145,8 +131,9 @@ let currentColor = 0
 const getNextColor = (): string =>
   colorWheel[currentColor++ % colorWheel.length]
 
-interface PackageWriter extends ITaskWriter {
+interface PackageWriter {
   log: (message: string) => void
+  close: () => void
 }
 
 const getWriters = (
@@ -187,20 +174,31 @@ export const syncPackages = async (): Promise<void> => {
     packageHashesValues.map(async info => {
       const writer = downloadWriters[info.name]
       writer.log(info.hash)
-      const existsLocally = await getExistsInLocalCache(info.fileName)
+      const existsLocally = await getExistsInLocalCache(info.hash)
       if (existsLocally) {
         writer.log('Local Cache Hit')
-        await readFromLocalCache(info, writer)
+        await readFromLocalCache({
+          key: info.hash,
+          to: path.join(root, info.location),
+          writer,
+        })
         cachedPackages[info.name] = true
         writer.close()
         return
       }
 
-      const existsRemotely = await getExistsInRemoteCache(info.fileName)
+      const existsRemotely = await getExistsInRemoteCache(info.hash)
       if (existsRemotely) {
         writer.log('Remote Cache Hit')
-        await readFromRemoteCache(info, writer)
-        await readFromLocalCache(info, writer)
+        await readFromRemoteCache({
+          key: info.hash,
+          writer,
+        })
+        await readFromLocalCache({
+          key: info.hash,
+          to: path.join(root, info.location),
+          writer,
+        })
         cachedPackages[info.name] = true
         writer.close()
         return
@@ -248,8 +246,11 @@ export const syncPackages = async (): Promise<void> => {
         return
       }
       const writer = uploadWriters[info.name]
-      await writeToLocalCache(info, writer)
-      await writeToRemoteCache(info, writer)
+      await writePackageToLocalCache(info)
+      await writeToRemoteCache({
+        key: info.hash,
+        writer,
+      })
       writer.close()
     }),
   )

@@ -4,14 +4,12 @@ import fs from 'fs-extra'
 import objectHash from 'object-hash'
 import execa from 'execa'
 import { getGlobalHash } from './getGlobalHash'
-import { root, cacheDir } from './paths'
+import { root } from './paths'
 
 export interface PackageInfo {
   location: string
   name: string
   hash: string
-  fileName: string
-  filePath: string
   hasBuildStep: boolean
 }
 
@@ -54,19 +52,16 @@ export const getPackageHashes = async (): Promise<PackageInfoMap> => {
       // Since we're doing this in topological order
       // There should be a hash calculated already for internal dependencies.
       .filter(name => packageHashes[name])
-      .map(name => packageHashes[name].fileName)
+      .map(name => packageHashes[name].hash)
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace('@', '').replace('/', '__')
     const fileName = `${slug}-${hash}.gz`
-    const filePath = path.join(cacheDir, fileName)
     packageHashes[packageInfo.name] = {
-      location: cwd,
-      fileName,
-      hash: hash,
-      filePath,
-      hasBuildStep: pkgJson.scripts && pkgJson.scripts.build,
       name: packageInfo.name,
+      location: cwd,
+      hash: fileName,
+      hasBuildStep: pkgJson.scripts && pkgJson.scripts.build,
     }
   }
 
