@@ -13,6 +13,10 @@ export const getGlobalHash = memoize(
     const globalDependencies = configResult.globalDependencies || []
     const deps = [...new Set([...globalDependencies, 'yarn.lock'])]
     const hashMap = getGitHashForFiles(deps, root)
-    return objectHash([hashMap, env.BEEZEL_CACHE_KEY])
+    return objectHash([
+      hashMap,
+      configResult.otherYarnCaches,
+      env.BEEZEL_CACHE_KEY,
+    ])
   },
 )
