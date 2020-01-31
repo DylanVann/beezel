@@ -1,6 +1,6 @@
 {
   "name": "beezel",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "A eezier build system for the node ecosystem.",
   "homepage": "https://github.com/DylanVann/beezel#readme",
   "bugs": {
