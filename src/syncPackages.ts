@@ -70,7 +70,7 @@ export const readFromLocalCache = async ({
   writer.log('Extract')
   const start = Date.now()
   await extractTar({
-    from: key,
+    from: path.join(cacheDir, key),
     to: to,
   })
   writer.log(`Extracted in ${Date.now() - start}ms`)
