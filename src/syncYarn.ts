@@ -48,16 +48,16 @@ export const syncYarn = async (): Promise<void> => {
     return
   }
 
-  await execa('yarn', ['install', '--frozen-lockfile'], { stdio: 'inherit', cwd: root })
+  await execa('yarn', ['install', '--frozen-lockfile'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
 
   const packageModulesDirectories = await fg('packages/*/node_modules', {
     cwd: root,
     onlyDirectories: true,
   })
-  const directoriesToCache = [
-    'node_modules',
-    ...packageModulesDirectories,
-  ]
+  const directoriesToCache = ['node_modules', ...packageModulesDirectories]
 
   writer.log('Writing Archive')
   const start = Date.now()
