@@ -5,11 +5,11 @@ import objectHash from 'object-hash'
 import execa from 'execa'
 import { getGlobalHash } from './getGlobalHash'
 import { root, cacheDir } from './paths'
-import { env } from 'env'
 
 export interface PackageInfo {
   location: string
   name: string
+  hash: string
   fileName: string
   filePath: string
   hasBuildStep: boolean
@@ -58,11 +58,12 @@ export const getPackageHashes = async (): Promise<PackageInfoMap> => {
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace('@', '').replace('/', '__')
-    const fileName = `${slug}-${hash}-${env.BEEZEL_CACHE_KEY}.gz`
+    const fileName = `${slug}-${hash}.gz`
     const filePath = path.join(cacheDir, fileName)
     packageHashes[packageInfo.name] = {
       location: cwd,
       fileName,
+      hash: hash,
       filePath,
       hasBuildStep: pkgJson.scripts && pkgJson.scripts.build,
       name: packageInfo.name,

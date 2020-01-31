@@ -15,6 +15,7 @@ import { Interleaver, ITaskWriter } from './Interleaver'
 import chalk from 'chalk'
 import { HeadObjectOutput } from 'aws-sdk/clients/s3'
 import { writeTar, extractTar } from './tar'
+import { getGlobalHash } from 'getGlobalHash'
 
 const existsInLocalCacheCache: { [key: string]: Stats | false } = {}
 const getExistsInLocalCache = async (key: string): Promise<Stats | false> => {
@@ -178,11 +179,14 @@ export const syncPackages = async (): Promise<void> => {
   console.log('-----------------------------------')
 
   console.log('Download Packages')
+  const globalHash = await getGlobalHash()
+  console.log(`${chalk.bold('Global hash')}: ${globalHash}`)
   console.time('Download Packages')
   const downloadWriters = getWriters(packageHashes)
   await Promise.all(
     packageHashesValues.map(async info => {
       const writer = downloadWriters[info.name]
+      writer.log(info.hash)
       const existsLocally = await getExistsInLocalCache(info.fileName)
       if (existsLocally) {
         writer.log('Local Cache Hit')
