@@ -60,6 +60,7 @@ export const syncYarn = async (): Promise<void> => {
     return
   }
 
+  writer.log('Cache Miss')
   await runYarn()
 
   const packageModulesDirectories = await fg('packages/*/node_modules', {
