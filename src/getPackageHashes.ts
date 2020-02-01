@@ -56,7 +56,7 @@ export const getPackageHashes = async (): Promise<PackageInfoMap> => {
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace('@', '').replace('/', '__')
-    const fileName = `${slug}-${hash}.gz`
+    const fileName = `${slug}-${hash}.tgz`
     packageHashes[packageInfo.name] = {
       name: packageInfo.name,
       location: cwd,
