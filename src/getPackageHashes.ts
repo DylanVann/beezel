@@ -2,8 +2,8 @@ import path from 'path'
 import { getPackageDeps } from '@microsoft/package-deps-hash'
 import fs from 'fs-extra'
 import objectHash from 'object-hash'
-import execa from 'execa'
 import { getGlobalHash } from './getGlobalHash'
+import { getPackageInfo } from './getPackageInfo'
 import { root } from './paths'
 
 export interface PackageInfo {
@@ -17,24 +17,7 @@ export type PackageInfoMap = { [key: string]: PackageInfo }
 
 export const getPackageHashes = async (): Promise<PackageInfoMap> => {
   const globalHash = await getGlobalHash()
-  // We need a list of packages in topological order.
-  // This is because we need to compute hashes for dependencies before dependents.
-  // Then the hash of a dependent can take into account the hash of its dependencies.
-  //
-  // e.g. ui depends on utils. If the hash of utils changes the hash of ui should change.
-  //
-  // External dependency changes trigger version and yarn.lock file changes, which are accounted
-  // for, so they are not relevant to this.
-  const { stdout: packagesJson } = await execa(
-    'lerna',
-    ['ls', '--all', '--toposort', '--json'],
-    { preferLocal: true, cwd: root },
-  )
-
-  const packageInfos: { location: string; name: string }[] = JSON.parse(
-    packagesJson,
-  )
-
+  const packageInfos = await getPackageInfo()
   const packageHashes: PackageInfoMap = {}
 
   // We cannot do this in parallel.

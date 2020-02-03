@@ -20,7 +20,8 @@
     "beezel": "dist/index.js"
   },
   "scripts": {
-    "build": "ncc build src/index.ts",
+    "build": "ts-node --project tsconfig.scripts.json scripts/build.ts",
+    "build:ncc": "ncc build src/index.ts",
     "format": "prettier src/**/*.ts --write",
     "test": "echo \"yolo\" && exit 0"
   },
@@ -42,7 +43,7 @@
     "chalk": "^3.0.0",
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
-    "envalid": "^6.0.0",
+    "envalid": "^6.0.1",
     "execa": "^4.0.0",
     "fast-glob": "^3.1.1",
     "filesize": "^6.0.1",
@@ -53,6 +54,8 @@
     "object-hash": "^2.0.1",
     "prettier": "^1.19.1",
     "tar": "^6.0.1",
+    "ts-node": "^8.6.2",
+    "tslib": "^1.10.0",
     "typescript": "^3.7.5"
   }
 }

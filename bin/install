@@ -18,7 +18,7 @@ const version = execSync('npm view beezel version', {
 const packageFile = `beezel-${version}.tgz`
 
 execSync(
-  `tar --strip-components=2 -C .beezel -zvxf ${packageFile} package/dist/index.js package/dist/package.json`,
+  `tar --strip-components=2 -zvxf ${packageFile} package/dist/beezel`,
   { stdio: 'ignore' },
 )
 

@@ -9,14 +9,14 @@ Remote build caching for JS monorepos.
 ## Installation
 
 Beezel caches `node_modules` and `packages/*/node_modules` for you, so its code must be accessible before running `yarn`.
-To accomplish this you can use this script to put Beezel in `.beezel`.
+To accomplish this you can use this script to put Beezel in your project. Beezel is distributed as a single file `beezel`, which is a node script.
 
 ```bash
 # Currently only works on macOS / Linux.
-curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install.js | node
+curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install | node
 ```
 
-You will need to commit the `.beezel` folder.
+You will need to commit the `beezel` file.
 
 ## Configuration
 
@@ -39,7 +39,7 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 # Run this to:
 # - Run Yarn (with remote caching).
 # - Build packages (with remote caching).
-node .beezel/index.js
+beezel
 ```
 
 ## Tips
