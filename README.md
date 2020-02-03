@@ -47,7 +47,7 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 
 ### `globalDependencies`
 
-**NOTE: Try to avoid using `globalDependencies`. Check the [Tips](##tips) section for more info.**
+**NOTE: Try to avoid using `globalDependencies`. Check the [Tips](##-tips) section for more info.**
 
 Depending on how your monorepo is setup you may have some files at the root of your project that need to be taken into account when determining what changed.
 
