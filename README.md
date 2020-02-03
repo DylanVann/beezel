@@ -97,7 +97,7 @@ The hash of a package depends on:
 - A hash of the source files in the package.
   - Only takes into account files that are not gitignored.
 - A hash taking into account internal dependencies.
-  - e.g. A depends on B, then the hash for A will take into account the hash of B..
+  - e.g. A depends on B, then the hash for A will take into account the hash of B.
   - e.g. A depends on B, if B changes then A needs to be rebuilt.
 - A hash taking into account global dependencies.
   - This takes into account your root `yarn.lock` file.
