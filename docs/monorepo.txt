@@ -1,0 +1,6 @@
+graph TD
+  utils --> app
+  utils --> components
+  components --> other-app
+  components --> app
+  other-other-app

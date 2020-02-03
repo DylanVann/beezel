@@ -9,10 +9,10 @@ Remote build caching for Lerna projects using Yarn workspaces.
 
 **Examples following these principles:**
 
-- If you make a change to `App` you should build `App`.
-- If you make a change to `Components` you should build `Components`, `App`, and `OtherApp`.
-- If you make a change to `Utils` you should build `Utils`, `Components`, `App`, and `OtherApp`.
-- In none of these examples should you need to build `OtherOtherApp`, since it has no dependencies we changed, and we never changed it.
+- If you make a change to `app` you should build `app`.
+- If you make a change to `components` you should build `components`, `app`, and `other-app`.
+- If you make a change to `utils` you should build `utils`, `components`, `app`, and `other-app`.
+- In none of these examples should you need to build `other-other-app`, since it has no dependencies we changed, and we never changed it.
 
 How do you accomplish not building things you have previously built if each CI run starts fresh? That is what "remote build caching" accomplishes. Artifacts from previous builds are stored on Amazon S3 so that we can download them and avoid building everything on each PR.
 
