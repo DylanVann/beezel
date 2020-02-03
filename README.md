@@ -1,6 +1,6 @@
 # Beezel
 
-Remote build caching for JS monorepos.
+Remote build caching for Lerna projects using Yarn workspaces.
 
 ![](./docs/monorepo.svg)
 
@@ -15,10 +15,6 @@ Remote build caching for JS monorepos.
 - In none of these examples should you need to build `OtherOtherApp`, since it has no dependencies we changed, and we never changed it.
 
 How do you accomplish not building things you have previously built if each CI run starts fresh? That is what "remote build caching" accomplishes. Artifacts from previous builds are stored on Amazon S3 so that we can download them and avoid building everything on each PR.
-
-## Prerequisites
-
-- Beezel supports Yarn workspaces / Lerna (using Yarn workspaces).
 
 ## Installation
 
