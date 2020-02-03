@@ -83,6 +83,9 @@ You can list other `globalDependencies` in `package.json`, for example you may w
 - Enable [Keep-Alive](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-reusing-connections.html) for S3 by setting `AWS_NODEJS_CONNECTION_REUSE_ENABLED` to `1`.
 - Instead of persisting to workspaces during a fan-out build (e.g. `persist_to_workspace` on CircleCI) you can run Beezel in each spawned container, this may be faster.
 - You should remove any existing caching of `node_modules` on CI, since Beezel does this.
+- Try not to use `globalDependencies` if possible.
+  - Having scripts at the root of your repo, or using any sort of global configuration files goes against the idea of separating things into packages.
+  - e.g. Instead of using `babel.config.js` at the root of your repo it would be better to create a `babel-preset-my-name` package and depend on that in other packages.
 
 ## How it works?
 
