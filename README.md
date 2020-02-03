@@ -39,7 +39,7 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 # Run this to:
 # - Run Yarn (with remote caching).
 # - Build packages (with remote caching).
-beezel
+./beezel
 ```
 
 ## Tips
