@@ -7,7 +7,7 @@ Remote build caching for JS monorepos.
 - You should only build things that need to be built based on what has changed in a PR.
 - You need to take into account dependencies.
 
-**Examples following these principales:**
+**Examples following these principles:**
 
 - If you make a change to `Components` you should build `App` and `OtherApp`.
 - If you make a change to `App` you should build `App`.
