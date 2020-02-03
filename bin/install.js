@@ -13,7 +13,6 @@ try {
 
 const version = execSync('npm view beezel version', {
   encoding: 'utf8',
-  stdio: 'ignore',
 }).trim()
 
 const packageFile = `beezel-${version}.tgz`
