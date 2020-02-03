@@ -9,8 +9,11 @@ Remote build caching for JS monorepos.
 ## Installation
 
 ```bash
-yarn add -D -W beezel
+# Currently only works on macOS / Linux.
+curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install.js -o beezel
 ```
+
+You will need to commit the `.beezel` folder.
 
 ## Configuration
 
@@ -33,7 +36,7 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 # Run this to:
 # - Run Yarn (with remote caching).
 # - Build packages (with remote caching).
-beezel
+node .beezel/index.js
 ```
 
 ## How it works?
