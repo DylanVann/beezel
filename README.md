@@ -34,6 +34,8 @@ You will need to commit the `beezel` file.
 
 ## Configuration
 
+### Environment Variables
+
 Use these environment variables to configure Beezel.
 
 ```bash
@@ -45,6 +47,29 @@ BEEZEL_AWS_BUCKET="Your bucket name."
 BEEZEL_CACHE_KEY="v2"
 # This could speed up S3.
 AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
+```
+
+### `globalDependencies`
+
+Depending on how your monorepo is setup you may have some files at the root of your project that need to be taken into account when determining what changed.
+
+By default Beezel only takes into account changes to `yarn.lock`, which will cause a full rebuild.
+
+You can list other `globalDependencies` in `package.json`, for example you may wish to do a full rebuild if `babel.config.js` changes:
+
+```json
+{
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "beezel": {
+    "globalDependencies": [
+      "babel.config.js",
+      "yarn.lock"
+    ]
+  }
+}
 ```
 
 ## Usage
