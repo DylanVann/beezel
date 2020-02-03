@@ -30,7 +30,9 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 ## Usage
 
 ```bash
-# Just run this to build or fetch your packages.
+# Run this to:
+# - Run Yarn (with remote caching).
+# - Build packages (with remote caching).
 beezel
 ```
 
