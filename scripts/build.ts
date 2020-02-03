@@ -1,3 +1,4 @@
+import 'hard-rejection/register'
 import execa from 'execa'
 import fs from 'fs-extra'
 import path from 'path'
@@ -16,6 +17,7 @@ const build = async () => {
     stdio: 'inherit',
     cwd: path.join(root),
   })
+  await fs.remove(path.join(root, 'dist'))
   await fs.move(
     path.join(root, 'dist', 'index.js'),
     path.join(root, 'dist', 'beezel'),
