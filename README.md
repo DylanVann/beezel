@@ -9,8 +9,8 @@ Remote build caching for JS monorepos.
 
 **Examples following these principles:**
 
-- If you make a change to `Components` you should build `App` and `OtherApp`.
 - If you make a change to `App` you should build `App`.
+- If you make a change to `Components` you should build `Components`, `App`, and `OtherApp`.
 - If you make a change to `Utils` you should build `Utils`, `Components`, `App`, and `OtherApp`.
 - In none of these examples should you need to build `OtherOtherApp`, since it has no dependencies we changed, and we never changed it.
 
