@@ -16,7 +16,7 @@ Remote build caching for JS monorepos.
 
 How do you accomplish not building things you have previously built if each CI run starts fresh? That is what "remote build caching" accomplishes. Artifacts from previous builds are stored on Amazon S3 so that we can download them and avoid building everything on each PR.
 
-## Prerequisits
+## Prerequisites
 
 - Beezel supports Yarn workspaces / Lerna (using Yarn workspaces).
 
