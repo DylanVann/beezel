@@ -10,7 +10,7 @@ Remote build caching for JS monorepos.
 
 ```bash
 # Currently only works on macOS / Linux.
-curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install.js -o beezel
+curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install.js | node
 ```
 
 You will need to commit the `.beezel` folder.
