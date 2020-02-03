@@ -15,7 +15,6 @@ import { Interleaver } from './Interleaver'
 import chalk from 'chalk'
 import { HeadObjectOutput } from 'aws-sdk/clients/s3'
 import { writeTar, extractTar } from './tarUtils'
-import { getGlobalHash } from 'getGlobalHash'
 
 export const getExistsInLocalCache = async (
   key: string,
@@ -55,7 +54,7 @@ export const readFromRemoteCache = async ({
   writer.log(`Download (${size})`)
   const start = Date.now()
   await downloadFromS3({ key, to: path.join(cacheDir, key) })
-  writer.log(`Downloaded (${size}) in ${Date.now() - start}ms`)
+  writer.log(`Download completed (${size}) in ${Date.now() - start}ms`)
 }
 
 export const readFromLocalCache = async ({
@@ -155,7 +154,10 @@ const getWriters = (
     }),
   )
 
+const hr = () => console.log('-'.repeat(process.stdout.columns))
+
 export const syncPackages = async (): Promise<void> => {
+  hr()
   const cachedPackages: { [key: string]: boolean } = {}
   const packageHashes = await getPackageHashes()
   const packageHashesValues = Object.values(packageHashes).filter(
@@ -163,12 +165,8 @@ export const syncPackages = async (): Promise<void> => {
   )
   Interleaver.setStdOut(process.stdout)
 
-  console.log('-----------------------------------')
-
   console.log('Download Packages')
-  const globalHash = await getGlobalHash()
-  console.log(`${chalk.bold('Global hash')}: ${globalHash}`)
-  console.time('Download Packages')
+  const downloadStart = Date.now()
   const downloadWriters = getWriters(packageHashes)
   await Promise.all(
     packageHashesValues.map(async info => {
@@ -212,12 +210,12 @@ export const syncPackages = async (): Promise<void> => {
     }),
   )
   Interleaver.reset()
-  console.timeEnd('Download Packages')
+  console.log(`Downloaded packages in ${Date.now() - downloadStart}ms`)
 
-  console.log('-----------------------------------')
+  hr()
 
   console.log('Build')
-  console.time('Build')
+  const buildStart = Date.now()
   const buildPackages = packageHashesValues
     .filter(v => !cachedPackages[v.name])
     .map(v => v.name)
@@ -233,12 +231,12 @@ export const syncPackages = async (): Promise<void> => {
   } else {
     console.log('Everything was cached!')
   }
-  console.timeEnd('Build')
+  console.log(`Build completed in ${Date.now() - buildStart}ms`)
 
-  console.log('-----------------------------------')
+  hr()
 
   console.log('Upload Packages')
-  console.time('Upload Packages')
+  const uploadStart = Date.now()
   const uploadWriters = getWriters(packageHashes)
   await Promise.all(
     packageHashesValues.map(async info => {
@@ -255,7 +253,5 @@ export const syncPackages = async (): Promise<void> => {
     }),
   )
   Interleaver.reset()
-  console.timeEnd('Upload Packages')
-
-  console.log('-----------------------------------')
+  console.log(`Upload packages completed in ${Date.now() - uploadStart}ms`)
 }
