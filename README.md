@@ -46,6 +46,7 @@ node .beezel/index.js
 
 - Enable [S3 transfer acceleration](https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html) on your S3 bucket.
 - Instead of persisting to workspaces during a fan-out build (e.g. `persist_to_workspace` on CircleCI) you can run Beezel in each spawned container, this may be faster.
+- You should remove any existing caching of `node_modules` on CI, since Beezel does this.
 
 ## How it works?
 
