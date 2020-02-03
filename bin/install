@@ -5,12 +5,6 @@ const { execSync } = require('child_process')
 
 execSync('npm pack beezel', { stdio: 'ignore' })
 
-try {
-  execSync('mkdir .beezel', { stdio: 'ignore' })
-} catch (e) {
-  // ignore if it was already there
-}
-
 const version = execSync('npm view beezel version', {
   encoding: 'utf8',
 }).trim()
