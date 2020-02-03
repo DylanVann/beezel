@@ -47,6 +47,8 @@ AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
 
 ### `globalDependencies`
 
+**NOTE: Try to avoid using `globalDependencies`. Check the [Tips](##tips) section for more info.**
+
 Depending on how your monorepo is setup you may have some files at the root of your project that need to be taken into account when determining what changed.
 
 By default Beezel only takes into account changes to `yarn.lock`, which will cause a full rebuild.
@@ -86,6 +88,8 @@ You can list other `globalDependencies` in `package.json`, for example you may w
 - Try not to use `globalDependencies` if possible.
   - Having scripts at the root of your repo, or using any sort of global configuration files goes against the idea of separating things into packages.
   - e.g. Instead of using `babel.config.js` at the root of your repo it would be better to create a `babel-preset-my-name` package and depend on that in other packages.
+  - If you use normal packages and list dependencies in your `package.json` files Beezel and other tools can understand your repo automatically.
+  - If you rely on other mechanisms like looking upwards in the file tree this is not possible.
 
 ## How it works?
 
