@@ -13,11 +13,11 @@ const createVersionFile = async () => {
 
 const build = async () => {
   await createVersionFile()
+  await fs.remove(path.join(root, 'dist'))
   await execa('yarn', ['build:ncc'], {
     stdio: 'inherit',
     cwd: path.join(root),
   })
-  await fs.remove(path.join(root, 'dist'))
   await fs.move(
     path.join(root, 'dist', 'index.js'),
     path.join(root, 'dist', 'beezel'),
