@@ -2,6 +2,20 @@
 
 Remote build caching for JS monorepos.
 
+![](./docs/monorepo.svg)
+
+- You should only build things that need to be built based on what has changed in a PR.
+- You need to take into account dependencies.
+
+**Examples following these principales:**
+
+- If you make a change to `Components` you should build App and `OtherApp`.
+- If you make a change to `App` you should build `App`.
+- If you make a change to `Utils` you should build `Utils`, `Components`, and `App`.
+- In none of these examples should you need to build `OtherApp`, since it has no dependencies, and we never changed it.
+
+How do you accomplish not building things you have previously built if each CI run starts fresh? That is what "remote build caching" accomplishes. Artifacts from previous builds are stored on Amazon S3 so that we can download them and avoid building everything on each PR.
+
 ## Prerequisits
 
 - Beezel supports Yarn workspaces / Lerna (using Yarn workspaces).
