@@ -58,14 +58,9 @@ You can list other `globalDependencies` in `package.json`, for example you may w
 ```json
 {
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": ["packages/*"],
   "beezel": {
-    "globalDependencies": [
-      "babel.config.js",
-      "yarn.lock"
-    ]
+    "globalDependencies": ["babel.config.js", "yarn.lock"]
   }
 }
 ```
