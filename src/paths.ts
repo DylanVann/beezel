@@ -1,6 +1,6 @@
 import path from 'path'
 import findWorkspaceRoot from 'find-yarn-workspace-root'
-import { env } from 'env'
+import { env } from './env'
 
 const getRoot = (): string => {
   const root = findWorkspaceRoot()
