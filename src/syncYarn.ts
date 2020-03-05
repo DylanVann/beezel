@@ -7,7 +7,8 @@ import {
   readFromRemoteCache,
   writeToRemoteCache,
 } from './syncPackages'
-import { root, cacheDir } from 'paths'
+import { root } from 'paths'
+import { cacheDir } from './cacheDir'
 import execa from 'execa'
 import fg from 'fast-glob'
 import chalk from 'chalk'

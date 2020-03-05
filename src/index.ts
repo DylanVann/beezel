@@ -2,7 +2,7 @@
 
 import 'hard-rejection/register'
 import fs from 'fs-extra'
-import { cacheDir } from 'paths'
+import { cacheDir } from './cacheDir'
 import { syncYarn } from 'syncYarn'
 import { syncPackages } from './syncPackages'
 import { getGlobalHash } from './getGlobalHash'
