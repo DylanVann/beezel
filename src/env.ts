@@ -12,4 +12,8 @@ export const env = envalid.cleanEnv(process.env, {
     desc: 'Global cache key. Can be used for cache busting.',
     default: 'v1',
   }),
+  BEEZEL_CACHE_FOLDER: str({
+    desc: 'Cache folder.',
+    default: './node_modules/.cache/beezel',
+  }),
 })
