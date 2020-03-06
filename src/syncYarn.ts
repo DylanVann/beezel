@@ -13,6 +13,7 @@ import execa from 'execa'
 import fg from 'fast-glob'
 import chalk from 'chalk'
 import * as tar from 'tar'
+import expandTilde from 'expand-tilde'
 import { getConfig } from 'getConfig'
 
 export const syncYarn = async (): Promise<void> => {
@@ -74,7 +75,7 @@ export const syncYarn = async (): Promise<void> => {
   )
   const directoriesToCache = [
     'node_modules',
-    ...otherYarnCaches,
+    ...otherYarnCaches.map(expandTilde),
     ...packageModulesDirectories,
   ]
 

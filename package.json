@@ -33,6 +33,7 @@
   "devDependencies": {
     "@dylanvann/tar-fs": "^2.0.1",
     "@microsoft/package-deps-hash": "^2.4.3",
+    "@types/expand-tilde": "^2.0.0",
     "@types/fs-extra": "^8.1.0",
     "@types/lodash.memoize": "^4.1.6",
     "@types/node": "^13.7.7",
@@ -45,6 +46,7 @@
     "dotenv": "^8.2.0",
     "envalid": "^6.0.1",
     "execa": "^4.0.0",
+    "expand-tilde": "^2.0.2",
     "fast-glob": "^3.2.2",
     "filesize": "^6.1.0",
     "find-yarn-workspace-root": "^1.2.1",
