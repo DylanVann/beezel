@@ -19,14 +19,8 @@ How do you accomplish not building things you have previously built if each CI r
 ## Installation
 
 Beezel caches `node_modules` and `packages/*/node_modules` for you, so its code must be accessible before running `yarn`.
-To accomplish this you can use this script to put Beezel in your project. Beezel is distributed as a single file (`beezel`), which is a node script.
 
-```bash
-# Currently only works on macOS / Linux.
-curl -L https://raw.githubusercontent.com/DylanVann/beezel/master/bin/install | node
-```
-
-You will need to commit the `beezel` file.
+To accomplish this you can use `npx beezel`.
 
 ## Configuration
 

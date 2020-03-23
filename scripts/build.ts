@@ -18,10 +18,6 @@ const build = async () => {
     stdio: 'inherit',
     cwd: path.join(root),
   })
-  await fs.move(
-    path.join(root, 'dist', 'index.js'),
-    path.join(root, 'dist', 'beezel'),
-  )
 }
 
 build()
