@@ -1,5 +1,5 @@
 import path from 'path'
-import { getPackageDeps } from '@microsoft/package-deps-hash'
+import { getPackageDeps } from '@rushstack/package-deps-hash'
 import fs from 'fs-extra'
 import objectHash from 'object-hash'
 import { getGlobalHash } from './getGlobalHash'
@@ -34,8 +34,8 @@ export const getPackageHashes = async (): Promise<PackageInfoMap> => {
     })
       // Since we're doing this in topological order
       // There should be a hash calculated already for internal dependencies.
-      .filter(name => packageHashes[name])
-      .map(name => packageHashes[name].hash)
+      .filter((name) => packageHashes[name])
+      .map((name) => packageHashes[name].hash)
     const hash = objectHash([hashOfFiles, depsHashes, globalHash])
     // Slugify scoped package names.
     const slug = packageInfo.name.replace('@', '').replace('/', '__')

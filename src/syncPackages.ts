@@ -84,7 +84,7 @@ const writePackageToLocalCache = async (info: PackageInfo): Promise<void> => {
   const untracked = execa.sync('git', ['ls-files', '-o'], { cwd }).stdout
   const untrackedArray = untracked
     .split('\n')
-    .filter(v => !v.startsWith('node_modules') && !v.startsWith('.'))
+    .filter((v) => !v.startsWith('node_modules') && !v.startsWith('.'))
 
   if (untrackedArray.length === 0) {
     // An empty file.
@@ -162,7 +162,7 @@ export const syncPackages = async (): Promise<void> => {
   const cachedPackages: { [key: string]: boolean } = {}
   const packageHashes = await getPackageHashes()
   const packageHashesValues = Object.values(packageHashes).filter(
-    info => info.hasBuildStep,
+    (info) => info.hasBuildStep,
   )
   Interleaver.setStdOut(process.stdout)
 
@@ -170,7 +170,7 @@ export const syncPackages = async (): Promise<void> => {
   const downloadStart = Date.now()
   const downloadWriters = getWriters(packageHashes)
   await Promise.all(
-    packageHashesValues.map(async info => {
+    packageHashesValues.map(async (info) => {
       const writer = downloadWriters[info.name]
       writer.log(info.hash)
       const existsLocally = await getExistsInLocalCache(info.hash)
@@ -218,9 +218,9 @@ export const syncPackages = async (): Promise<void> => {
   console.log('Build')
   const buildStart = Date.now()
   const buildPackages = packageHashesValues
-    .filter(v => !cachedPackages[v.name])
-    .map(v => v.name)
-  const scopeArgs = buildPackages.flatMap(name => ['--scope', name])
+    .filter((v) => !cachedPackages[v.name])
+    .map((v) => v.name)
+  const scopeArgs = buildPackages.flatMap((name) => ['--scope', name])
   if (buildPackages.length) {
     const args = ['run', 'build', '--stream', '--reject-cycles', ...scopeArgs]
     console.log(`lerna ${args.join(' ')}`)
@@ -240,7 +240,7 @@ export const syncPackages = async (): Promise<void> => {
   const uploadStart = Date.now()
   const uploadWriters = getWriters(packageHashes)
   await Promise.all(
-    packageHashesValues.map(async info => {
+    packageHashesValues.map(async (info) => {
       if (cachedPackages[info.name]) {
         return
       }

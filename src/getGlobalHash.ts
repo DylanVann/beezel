@@ -1,4 +1,4 @@
-import { getGitHashForFiles } from '@microsoft/package-deps-hash'
+import { getGitHashForFiles } from '@rushstack/package-deps-hash'
 import objectHash from 'object-hash'
 import { env } from './env'
 import { getConfig } from './getConfig'

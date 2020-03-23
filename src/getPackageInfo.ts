@@ -11,10 +11,12 @@ import { root } from './paths'
  * External dependency changes trigger version and yarn.lock file changes, which are accounted
  * for, so they are not relevant to this.
  */
-export const getPackageInfo = async (): Promise<{
-  location: string
-  name: string
-}[]> => {
+export const getPackageInfo = async (): Promise<
+  {
+    location: string
+    name: string
+  }[]
+> => {
   const { stdout } = await execa(
     'lerna',
     ['ls', '--all', '--toposort', '--json'],

@@ -15,11 +15,11 @@ export const downloadFromS3 = ({
       Bucket: env.BEEZEL_AWS_BUCKET,
       Key: key,
     }).createReadStream()
-    s3Stream.on('error', e => {
+    s3Stream.on('error', (e) => {
       fileStream.destroy()
       reject(e)
     })
-    fileStream.on('error', e => {
+    fileStream.on('error', (e) => {
       s3Stream.destroy()
       reject(e)
     })

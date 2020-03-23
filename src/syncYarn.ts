@@ -70,7 +70,7 @@ export const syncYarn = async (): Promise<void> => {
     onlyDirectories: true,
   })
   const config = await getConfig()
-  const otherYarnCaches = (config.otherYarnCaches || []).filter(p =>
+  const otherYarnCaches = (config.otherYarnCaches || []).filter((p) =>
     fs.existsSync(path.join(root, p)),
   )
   const directoriesToCache = [

@@ -9,12 +9,9 @@ export const extractTar = ({
   to: string
 }): Promise<void> =>
   new Promise((resolve, reject) =>
-    fs.createReadStream(from).pipe(
-      tarFs
-        .extract(to)
-        .on('error', reject)
-        .on('finish', resolve),
-    ),
+    fs
+      .createReadStream(from)
+      .pipe(tarFs.extract(to).on('error', reject).on('finish', resolve)),
   )
 
 export const writeTar = ({
