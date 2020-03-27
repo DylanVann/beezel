@@ -147,5 +147,5 @@ yargs
       })
     },
   )
-  .command('version', 'Print the version.', undefined, printVersion)
+  .command('version', 'Print the version.', (yargs) => yargs, printVersion)
   .parse()
