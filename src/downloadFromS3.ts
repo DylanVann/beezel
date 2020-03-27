@@ -1,20 +1,25 @@
 import fs from 'fs-extra'
-import { S3 } from './s3Client'
-import { env } from './env'
+import AWS from 'aws-sdk'
 
 export const downloadFromS3 = ({
   key,
   to,
+  awsBucket,
+  s3,
 }: {
   key: string
   to: string
+  awsBucket: string
+  s3: AWS.S3
 }): Promise<void> => {
   return new Promise((resolve, reject) => {
     const fileStream = fs.createWriteStream(to)
-    const s3Stream = S3.getObject({
-      Bucket: env.BEEZEL_AWS_BUCKET,
-      Key: key,
-    }).createReadStream()
+    const s3Stream = s3
+      .getObject({
+        Bucket: awsBucket,
+        Key: key,
+      })
+      .createReadStream()
     s3Stream.on('error', (e) => {
       fileStream.destroy()
       reject(e)

@@ -2,9 +2,7 @@ import path from 'path'
 import { getPackageDeps } from '@rushstack/package-deps-hash'
 import fs from 'fs-extra'
 import objectHash from 'object-hash'
-import { getGlobalHash } from './getGlobalHash'
 import { getPackageInfo } from './getPackageInfo'
-import { root } from './paths'
 
 export interface PackageInfo {
   location: string
@@ -15,9 +13,14 @@ export interface PackageInfo {
 
 export type PackageInfoMap = { [key: string]: PackageInfo }
 
-export const getPackageHashes = async (): Promise<PackageInfoMap> => {
-  const globalHash = await getGlobalHash()
-  const packageInfos = await getPackageInfo()
+export const getPackageHashes = async ({
+  globalHash,
+  root,
+}: {
+  globalHash: string
+  root: string
+}): Promise<PackageInfoMap> => {
+  const packageInfos = await getPackageInfo({ root })
   const packageHashes: PackageInfoMap = {}
 
   // We cannot do this in parallel.
