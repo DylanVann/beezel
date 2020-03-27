@@ -7,17 +7,29 @@ import {
   readFromRemoteCache,
   writeToRemoteCache,
 } from './syncPackages'
-import { root } from 'paths'
-import { cacheDir } from './cacheDir'
 import execa from 'execa'
 import fg from 'fast-glob'
 import chalk from 'chalk'
 import * as tar from 'tar'
 import expandTilde from 'expand-tilde'
-import { getConfig } from 'getConfig'
+import AWS from 'aws-sdk'
 
-export const syncYarn = async (): Promise<void> => {
-  const key: string = await getYarnHash()
+export const syncYarn = async ({
+  globalHash,
+  cacheDir,
+  root,
+  awsBucket,
+  s3,
+  otherYarnCaches,
+}: {
+  globalHash: string
+  cacheDir: string
+  root: string
+  awsBucket: string
+  s3: AWS.S3
+  otherYarnCaches: string[]
+}): Promise<void> => {
+  const key: string = await getYarnHash({ globalHash, root })
   const writer = {
     log: (message: string) => console.log(`${chalk.bold('Yarn')}: ${message}`),
     close: () => {},
@@ -42,7 +54,7 @@ export const syncYarn = async (): Promise<void> => {
     })
   }
 
-  const existsLocally = await getExistsInLocalCache(key)
+  const existsLocally = await getExistsInLocalCache(key, cacheDir)
   if (existsLocally) {
     writer.log('Local Cache Hit')
     await extract()
@@ -50,12 +62,15 @@ export const syncYarn = async (): Promise<void> => {
     return
   }
 
-  const existsRemotely = await getExistsInRemoteCache(key)
+  const existsRemotely = await getExistsInRemoteCache({ key, awsBucket, s3 })
   if (existsRemotely) {
     writer.log('Remote Cache Hit')
     await readFromRemoteCache({
       key,
       writer,
+      awsBucket,
+      cacheDir,
+      s3,
     })
     await extract()
     await runYarn()
@@ -69,13 +84,12 @@ export const syncYarn = async (): Promise<void> => {
     cwd: root,
     onlyDirectories: true,
   })
-  const config = await getConfig()
-  const otherYarnCaches = (config.otherYarnCaches || []).filter((p) =>
+  const otherYarnCachesPaths = otherYarnCaches.filter((p) =>
     fs.existsSync(path.join(root, p)),
   )
   const directoriesToCache = [
     'node_modules',
-    ...otherYarnCaches.map(expandTilde),
+    ...otherYarnCachesPaths.map(expandTilde),
     ...packageModulesDirectories,
   ]
 
@@ -94,5 +108,8 @@ export const syncYarn = async (): Promise<void> => {
   await writeToRemoteCache({
     key,
     writer,
+    cacheDir,
+    awsBucket,
+    s3,
   })
 }

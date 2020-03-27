@@ -1,5 +1,4 @@
 import execa from 'execa'
-import { root } from './paths'
 
 /**
  * We need a list of packages in topological order.
@@ -11,7 +10,11 @@ import { root } from './paths'
  * External dependency changes trigger version and yarn.lock file changes, which are accounted
  * for, so they are not relevant to this.
  */
-export const getPackageInfo = async (): Promise<
+export const getPackageInfo = async ({
+  root,
+}: {
+  root: string
+}): Promise<
   {
     location: string
     name: string
