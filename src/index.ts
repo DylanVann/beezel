@@ -16,7 +16,7 @@ import AWS from 'aws-sdk'
 
 // If this changes we do a full rebuild.
 // It should include any global dependencies.
-export const getGlobalHash = async ({
+const getGlobalHash = async ({
   globalDependencies = [],
   root,
   otherYarnCaches,
