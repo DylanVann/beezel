@@ -4,7 +4,6 @@ import 'hard-rejection/register'
 import fs from 'fs-extra'
 import { syncYarn } from 'syncYarn'
 import { syncPackages } from './syncPackages'
-import { version } from './version'
 import path from 'path'
 import expandTilde from 'expand-tilde'
 import findWorkspaceRoot from 'find-yarn-workspace-root'
@@ -38,24 +37,6 @@ interface Config {
   cacheKey: string
   cacheFolder: string
 }
-
-const getConfig = async ({
-  root,
-}: {
-  root: string
-}): Promise<Partial<Config>> => {
-  const packageJsonPath = path.join(root, 'package.json')
-  const pkg = await fs.readJson(packageJsonPath)
-  if (!pkg) {
-    throw new Error(`Could not find package.json at ${packageJsonPath}`)
-  }
-  if (pkg.beezel) {
-    return pkg.beezel
-  }
-  return {}
-}
-
-const printVersion = () => console.log(`Beezel - v${version}`)
 
 const build = async ({
   cacheKey,
@@ -147,7 +128,14 @@ yargs
       if (!root) {
         throw new Error('Could not find workspace root.')
       }
-      const configFromPackage = await getConfig({ root })
+
+      const packageJsonPath = path.join(root, 'package.json')
+      const pkg = await fs.readJson(packageJsonPath)
+      if (!pkg) {
+        throw new Error(`Could not find package.json at ${packageJsonPath}`)
+      }
+
+      const configFromPackage: Partial<Config> = pkg.beezel || {}
       const s3 = new AWS.S3({
         credentials: {
           accessKeyId: args.awsId,
@@ -170,7 +158,7 @@ yargs
         cacheFolder: transformCacheFolder(config.cacheFolder),
       }
 
-      printVersion()
+      console.log(`Beezel - v${pkg.version}`)
       console.log('Configuration:')
       console.log(JSON.stringify(finalConfig, null, 2))
 
@@ -184,5 +172,4 @@ yargs
       })
     },
   )
-  .command('version', 'Print the version.', (yargs) => yargs, printVersion)
   .parse()
