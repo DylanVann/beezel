@@ -20,24 +20,41 @@ How do you accomplish not building things you have previously built if each CI r
 
 Beezel caches `node_modules` and `packages/*/node_modules` for you, so its code must be accessible before running `yarn`.
 
-To accomplish this you can use `npx beezel`.
+To accomplish this you can use `npx beezel build`.
 
-## Configuration
+Note: For stability you should prefer using `npx beezel@x.x.x build` to lock the version of Beezel.
 
-### Environment Variables
+## Options
 
-Use these environment variables to configure Beezel.
+**Options can be provided through (in order of precedence):**
 
-```bash
-# Beezel needs credentials for AWS S3 access.
-BEEZEL_AWS_ID="Your id."
-BEEZEL_AWS_SECRET="Your secret."
-BEEZEL_AWS_BUCKET="Your bucket name."
-# This can be used to cache bust Beezel.
-BEEZEL_CACHE_KEY="v2"
-# This could speed up S3.
-AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
-```
+- A `beezel` property in your `package.json` file, e.g.
+  ```json
+  {
+    ...
+    "beezel": {
+      "cacheFolder": "~/project/.cache/beezel"
+    }
+  }
+  ```
+  - AWS credentials and bucket name cannot be provided in `package.json`.
+- Command line arguments, e.g. `--cacheFolder ~/project/.cache/beezel`.
+- Environment variables, e.g. `BEEZEL_CACHE_FOLDER=~/project/.cache/beezel`.
+  - Environment variables are the name of the option in `UPPER_SNAKE_CASE` prefixed with `BEEZEL`, e.g. `cacheFolder` -> `BEEZEL_CACHE_FOLDER`.
+
+To see the options you can run `npx beezel build --help`.
+
+### `cacheFolder`
+
+Where to store the beezel cache.
+
+### `cacheKey`
+
+A global key to add to all caches. Can be used to globally bust the cache.
+
+### `otherYarnCaches`
+
+Other locations that should be cached with `node_modules`, e.g. You could cache the Cypress binary if you're using Cypress.
 
 ### `globalDependencies`
 
@@ -59,13 +76,25 @@ You can list other `globalDependencies` in `package.json`, for example you may w
 }
 ```
 
+### `awsBucket`
+
+The bucket to store things in.
+
+### `awsId`
+
+Your AWS id.
+
+### `awsSecret`
+
+Your AWS secret.
+
 ## Usage
 
 ```bash
 # Run this to:
 # - Run Yarn (with remote caching).
 # - Build packages (with remote caching).
-./beezel
+npx beezel build
 ```
 
 ## Tips
