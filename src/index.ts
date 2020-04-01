@@ -13,6 +13,7 @@ import yargs from 'yargs'
 import { getGitHashForFiles } from '@rushstack/package-deps-hash'
 import objectHash from 'object-hash'
 import AWS from 'aws-sdk'
+import defaults from 'lodash.defaults'
 
 // If this changes we do a full rebuild.
 // It should include any global dependencies.
@@ -33,17 +34,26 @@ const getGlobalHash = async ({
 }
 
 interface Config {
-  otherYarnCaches?: string[]
+  otherYarnCaches: string[]
   globalDependencies: string[]
+  cacheKey: string
+  cacheFolder: string
 }
 
-const getConfig = async ({ root }: { root: string }): Promise<Config> => {
+const getConfig = async ({
+  root,
+}: {
+  root: string
+}): Promise<Partial<Config>> => {
   const packageJsonPath = path.join(root, 'package.json')
   const pkg = await fs.readJson(packageJsonPath)
   if (!pkg) {
     throw new Error(`Could not find package.json at ${packageJsonPath}`)
   }
-  return pkg.beezel || {}
+  if (pkg.beezel) {
+    return pkg.beezel
+  }
+  return {}
 }
 
 const printVersion = () => console.log(`Beezel - v${version}`)
@@ -122,28 +132,49 @@ yargs
           default: './node_modules/.cache/beezel',
           type: 'string',
         },
+        otherYarnCaches: {
+          description: 'Other locations to include in the yarn cache.',
+          default: [] as string[],
+          type: 'array',
+        },
+        globalDependencies: {
+          description:
+            'Files to take into account when determining the global hash.',
+          default: [] as string[],
+          type: 'array',
+        },
       }),
     async (args) => {
       const root = findWorkspaceRoot(process.cwd())
       if (!root) {
         throw new Error('Could not find workspace root.')
       }
-      const config = await getConfig({ root })
+      const configFromPackage = await getConfig({ root })
+      const { awsId, awsSecret, awsBucket, ...configFromArgs } = args
       const s3 = new AWS.S3({
         credentials: {
           accessKeyId: args.awsId,
           secretAccessKey: args.awsSecret,
         },
       })
+
+      const transformCacheFolder = (folder: string) =>
+        folder.startsWith('.') ? path.join(root, folder) : expandTilde(folder)
+
+      const config: Config = defaults({}, configFromPackage, configFromArgs)
+      const finalConfig: Config = {
+        ...config,
+        cacheFolder: transformCacheFolder(config.cacheFolder),
+      }
+
+      console.log('Configuration:')
+      console.log(JSON.stringify(finalConfig, null, 2))
+
       await build({
         ...args,
-        ...config,
+        ...finalConfig,
         s3,
         root,
-        otherYarnCaches: config.otherYarnCaches || [],
-        cacheFolder: args.cacheFolder.startsWith('.')
-          ? path.join(root, args.cacheFolder)
-          : expandTilde(args.cacheFolder),
       })
     },
   )
