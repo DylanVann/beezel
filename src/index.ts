@@ -175,8 +175,10 @@ yargs
       console.log(JSON.stringify(finalConfig, null, 2))
 
       await build({
-        ...args,
         ...finalConfig,
+        awsId: args.awsId,
+        awsBucket: args.awsBucket,
+        awsSecret: args.awsSecret,
         s3,
         root,
       })
