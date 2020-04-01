@@ -12,14 +12,14 @@
   },
   "license": "MIT",
   "author": "Dylan Vann",
-  "files": [
-    "dist",
-    "src"
-  ],
   "main": "dist/index.js",
   "bin": {
     "beezel": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "ts-node --project tsconfig.scripts.json scripts/build.ts",
     "build:ncc": "ncc build src/index.ts --source-map --minify --v8-cache",
