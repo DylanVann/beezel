@@ -13,7 +13,6 @@ import yargs from 'yargs'
 import { getGitHashForFiles } from '@rushstack/package-deps-hash'
 import objectHash from 'object-hash'
 import AWS from 'aws-sdk'
-import defaults from 'lodash.defaults'
 
 // If this changes we do a full rebuild.
 // It should include any global dependencies.
@@ -161,7 +160,7 @@ yargs
       const transformCacheFolder = (folder: string) =>
         folder.startsWith('.') ? path.join(root, folder) : expandTilde(folder)
 
-      const config: Config = defaults({}, configFromPackage, configFromArgs)
+      const config: Config = { ...configFromPackage, ...configFromArgs }
       const finalConfig: Config = {
         ...config,
         cacheFolder: transformCacheFolder(config.cacheFolder),
