@@ -149,7 +149,6 @@ yargs
         throw new Error('Could not find workspace root.')
       }
       const configFromPackage = await getConfig({ root })
-      const { awsId, awsSecret, awsBucket, ...configFromArgs } = args
       const s3 = new AWS.S3({
         credentials: {
           accessKeyId: args.awsId,
@@ -160,7 +159,13 @@ yargs
       const transformCacheFolder = (folder: string) =>
         folder.startsWith('.') ? path.join(root, folder) : expandTilde(folder)
 
-      const config: Config = { ...configFromPackage, ...configFromArgs }
+      const extractConfig = (c: Config): Config => ({
+        cacheFolder: c.cacheFolder,
+        cacheKey: c.cacheKey,
+        globalDependencies: c.globalDependencies,
+        otherYarnCaches: c.otherYarnCaches,
+      })
+      const config: Config = { ...extractConfig(args), ...configFromPackage }
       const finalConfig: Config = {
         ...config,
         cacheFolder: transformCacheFolder(config.cacheFolder),
