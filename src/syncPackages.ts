@@ -15,10 +15,10 @@ import { writeTar, extractTar } from './tarUtils'
 
 export const getExistsInLocalCache = async (
   key: string,
-  cacheDir: string,
+  cacheFolder: string,
 ): Promise<Stats | false> => {
   try {
-    const stats = await fs.stat(path.join(cacheDir, key))
+    const stats = await fs.stat(path.join(cacheFolder, key))
     return stats
   } catch (e) {
     return false
@@ -51,13 +51,13 @@ export const readFromRemoteCache = async ({
   key,
   writer,
   awsBucket,
-  cacheDir,
+  cacheFolder,
   s3,
 }: {
   key: string
   writer: PackageWriter
   awsBucket: string
-  cacheDir: string
+  cacheFolder: string
   s3: AWS.S3
 }) => {
   const info = await getExistsInRemoteCache({ key, awsBucket, s3 })
@@ -65,7 +65,7 @@ export const readFromRemoteCache = async ({
   const size = filesize(info.ContentLength || 0)
   writer.log(`Download (${size})`)
   const start = Date.now()
-  await downloadFromS3({ key, to: path.join(cacheDir, key), awsBucket, s3 })
+  await downloadFromS3({ key, to: path.join(cacheFolder, key), awsBucket, s3 })
   writer.log(`Download completed (${size}) in ${Date.now() - start}ms`)
 }
 
@@ -73,17 +73,17 @@ export const readFromLocalCache = async ({
   key,
   to,
   writer,
-  cacheDir,
+  cacheFolder,
 }: {
   key: string
   to: string
   writer: PackageWriter
-  cacheDir: string
+  cacheFolder: string
 }) => {
   writer.log('Extract')
   const start = Date.now()
   await extractTar({
-    from: path.join(cacheDir, key),
+    from: path.join(cacheFolder, key),
     to: to,
   })
   writer.log(`Extracted in ${Date.now() - start}ms`)
@@ -92,7 +92,7 @@ export const readFromLocalCache = async ({
 const writePackageToLocalCache = async (
   info: PackageInfo,
   root: string,
-  cacheDir: string,
+  cacheFolder: string,
 ): Promise<void> => {
   const { hash, location } = info
   const cwd = path.join(root, location)
@@ -105,12 +105,12 @@ const writePackageToLocalCache = async (
 
   if (untrackedArray.length === 0) {
     // An empty file.
-    await fs.createFile(path.join(cacheDir, hash))
+    await fs.createFile(path.join(cacheFolder, hash))
   } else {
     await writeTar({
       entries: untrackedArray,
       cwd,
-      path: path.join(cacheDir, hash),
+      path: path.join(cacheFolder, hash),
     })
   }
 }
@@ -119,16 +119,16 @@ export const writeToRemoteCache = async ({
   key,
   writer,
   awsBucket,
-  cacheDir,
+  cacheFolder,
   s3,
 }: {
   key: string
   writer: PackageWriter
-  cacheDir: string
+  cacheFolder: string
   awsBucket: string
   s3: AWS.S3
 }): Promise<void> => {
-  const filePath = path.join(cacheDir, key)
+  const filePath = path.join(cacheFolder, key)
   const size = fs.statSync(filePath).size
   const sizeString = filesize(size, { unix: true })
   const body = await fs.readFile(filePath)
@@ -185,13 +185,13 @@ const hr = () => console.log('-'.repeat(process.stdout.columns))
 export const syncPackages = async ({
   globalHash,
   root,
-  cacheDir,
+  cacheFolder,
   awsBucket,
   s3,
 }: {
   globalHash: string
   root: string
-  cacheDir: string
+  cacheFolder: string
   awsBucket: string
   s3: AWS.S3
 }): Promise<void> => {
@@ -210,14 +210,14 @@ export const syncPackages = async ({
     packageHashesValues.map(async (info) => {
       const writer = downloadWriters[info.name]
       writer.log(info.hash)
-      const existsLocally = await getExistsInLocalCache(info.hash, cacheDir)
+      const existsLocally = await getExistsInLocalCache(info.hash, cacheFolder)
       if (existsLocally) {
         writer.log('Local Cache Hit')
         await readFromLocalCache({
           key: info.hash,
           to: path.join(root, info.location),
           writer,
-          cacheDir,
+          cacheFolder,
         })
         cachedPackages[info.name] = true
         writer.close()
@@ -235,14 +235,14 @@ export const syncPackages = async ({
           key: info.hash,
           writer,
           awsBucket,
-          cacheDir,
+          cacheFolder,
           s3,
         })
         await readFromLocalCache({
           key: info.hash,
           to: path.join(root, info.location),
           writer,
-          cacheDir,
+          cacheFolder,
         })
         cachedPackages[info.name] = true
         writer.close()
@@ -291,11 +291,11 @@ export const syncPackages = async ({
         return
       }
       const writer = uploadWriters[info.name]
-      await writePackageToLocalCache(info, root, cacheDir)
+      await writePackageToLocalCache(info, root, cacheFolder)
       await writeToRemoteCache({
         key: info.hash,
         writer,
-        cacheDir,
+        cacheFolder,
         awsBucket,
         s3,
       })

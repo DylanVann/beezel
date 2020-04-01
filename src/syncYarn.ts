@@ -16,14 +16,14 @@ import AWS from 'aws-sdk'
 
 export const syncYarn = async ({
   globalHash,
-  cacheDir,
+  cacheFolder,
   root,
   awsBucket,
   s3,
   otherYarnCaches,
 }: {
   globalHash: string
-  cacheDir: string
+  cacheFolder: string
   root: string
   awsBucket: string
   s3: AWS.S3
@@ -40,7 +40,7 @@ export const syncYarn = async ({
     writer.log('Extract')
     const start = Date.now()
     await tar.extract({
-      file: path.join(cacheDir, key),
+      file: path.join(cacheFolder, key),
       cwd: root,
     })
     writer.log(`Extracted in ${Date.now() - start}ms`)
@@ -54,7 +54,7 @@ export const syncYarn = async ({
     })
   }
 
-  const existsLocally = await getExistsInLocalCache(key, cacheDir)
+  const existsLocally = await getExistsInLocalCache(key, cacheFolder)
   if (existsLocally) {
     writer.log('Local Cache Hit')
     await extract()
@@ -69,7 +69,7 @@ export const syncYarn = async ({
       key,
       writer,
       awsBucket,
-      cacheDir,
+      cacheFolder,
       s3,
     })
     await extract()
@@ -98,7 +98,7 @@ export const syncYarn = async ({
   await tar.create(
     {
       cwd: root,
-      file: path.join(cacheDir, key),
+      file: path.join(cacheFolder, key),
       gzip: true,
     },
     directoriesToCache,
@@ -108,7 +108,7 @@ export const syncYarn = async ({
   await writeToRemoteCache({
     key,
     writer,
-    cacheDir,
+    cacheFolder,
     awsBucket,
     s3,
   })

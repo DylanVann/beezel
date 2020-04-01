@@ -77,7 +77,7 @@ const build = async ({
   console.log(`${chalk.bold('Global hash')}: ${globalHash}`)
   await fs.ensureDir(cacheFolder)
   await syncYarn({
-    cacheDir: cacheFolder,
+    cacheFolder,
     globalHash,
     root,
     awsBucket,
@@ -85,7 +85,7 @@ const build = async ({
     otherYarnCaches,
   })
   await syncPackages({
-    cacheDir: cacheFolder,
+    cacheFolder,
     globalHash,
     root,
     awsBucket,
