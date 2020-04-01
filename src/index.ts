@@ -76,7 +76,6 @@ const build = async ({
   root: string
   s3: AWS.S3
 }) => {
-  printVersion()
   const globalHash = await getGlobalHash({
     otherYarnCaches: otherYarnCaches,
     globalDependencies: globalDependencies,
@@ -122,25 +121,25 @@ yargs
           demandOption: true,
         },
         cacheKey: {
-          description: 'Global cache key. Can be used for cache busting.',
-          default: 'v1',
           type: 'string',
+          default: 'v1',
+          description: 'Global cache key. Can be used for cache busting.',
         },
         cacheFolder: {
-          description: "Where to store Beezel's cache locally.",
-          default: './node_modules/.cache/beezel',
           type: 'string',
+          default: './node_modules/.cache/beezel',
+          description: "Where to store Beezel's cache locally.",
         },
         otherYarnCaches: {
-          description: 'Other locations to include in the yarn cache.',
-          default: [] as string[],
           type: 'array',
+          default: [] as string[],
+          description: 'Other locations to include in the yarn cache.',
         },
         globalDependencies: {
+          type: 'array',
+          default: [] as string[],
           description:
             'Files to take into account when determining the global hash.',
-          default: [] as string[],
-          type: 'array',
         },
       }),
     async (args) => {
@@ -171,6 +170,7 @@ yargs
         cacheFolder: transformCacheFolder(config.cacheFolder),
       }
 
+      printVersion()
       console.log('Configuration:')
       console.log(JSON.stringify(finalConfig, null, 2))
 
