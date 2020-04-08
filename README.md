@@ -129,3 +129,13 @@ The hash of a package depends on:
 After a package is built an archive is created for it.
 The archive will contain any gitignored files in the package folder.
 The archive is uploaded to S3 with the cache key in the filename so that on the next build we can download this file instead of building from scratch.
+
+## Comparison to Bazel
+
+The name Beezel comes from Bazel. How Beezel works comes from ideas in other build systems.
+
+- Beezel works with Lerna projects. This is its main requirement, but within that requirement it is flexible.
+- Beezel doesn't care what you use to build a project, it just calls the build script for packages.
+- Beezel doesn't care what files are output within a package, or where exactly they are output, except that they should be output within the package folder.
+- Beezel caching operates on the package level, compared to Bazel's rules this is less fine grained.
+- Beezel runs `yarn` before running everything else. It works with Yarn workspaces.
