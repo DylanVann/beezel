@@ -184,8 +184,8 @@ const getAndPrintConfig = async (
 yargs
   .env('BEEZEL')
   .command(
-    'yarn',
-    'Install dependencies.',
+    'install',
+    'Install dependencies using yarn (or use remote cache).',
     (yargs) => yargs.options(options),
     async (args) => {
       const config = await getAndPrintConfig(args)
@@ -206,7 +206,7 @@ yargs
   )
   .command(
     'build',
-    'Build the project.',
+    'Build all packages (or use remote cache).',
     (yargs) => yargs.options(options),
     async (args) => {
       const config = await getAndPrintConfig(args)

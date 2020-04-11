@@ -18,9 +18,17 @@ How do you accomplish not building things you have previously built if each CI r
 
 ## Installation
 
-Beezel caches `node_modules` and `packages/*/node_modules` for you, so its code must be accessible before running `yarn`.
+Beezel can cache and restore `node_modules` for you. To accomplish this you must run beezel before running `yarn` or `npm install`.
 
-To accomplish this you can use `npx beezel build`.
+To do this you can use `npx`, e.g.
+
+```bash
+# Install dependencies using yarn (or use remote cache).
+npx beezel install
+
+# Build all packages (or use remote cache).
+npx beezel build
+```
 
 Note: For stability you should prefer using `npx beezel@x.x.x build` to lock the version of Beezel.
 
