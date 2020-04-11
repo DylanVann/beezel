@@ -38,15 +38,7 @@ interface Config {
   cacheFolder: string
 }
 
-const build = async ({
-  cacheKey,
-  cacheFolder,
-  root,
-  awsBucket,
-  s3,
-  otherYarnCaches,
-  globalDependencies,
-}: {
+interface BuildEnvironment {
   awsId: string
   awsSecret: string
   awsBucket: string
@@ -56,7 +48,17 @@ const build = async ({
   globalDependencies: string[]
   root: string
   s3: AWS.S3
-}) => {
+}
+
+const runYarn = async ({
+  cacheKey,
+  cacheFolder,
+  root,
+  awsBucket,
+  s3,
+  otherYarnCaches,
+  globalDependencies,
+}: BuildEnvironment) => {
   const globalHash = await getGlobalHash({
     otherYarnCaches: otherYarnCaches,
     globalDependencies: globalDependencies,
@@ -73,6 +75,25 @@ const build = async ({
     s3,
     otherYarnCaches,
   })
+}
+
+const runBuild = async ({
+  cacheKey,
+  cacheFolder,
+  root,
+  awsBucket,
+  s3,
+  otherYarnCaches,
+  globalDependencies,
+}: BuildEnvironment) => {
+  const globalHash = await getGlobalHash({
+    otherYarnCaches: otherYarnCaches,
+    globalDependencies: globalDependencies,
+    root: root,
+    cacheKey: cacheKey,
+  })
+  console.log(`${chalk.bold('Global hash')}: ${globalHash}`)
+  await fs.ensureDir(cacheFolder)
   await syncPackages({
     cacheFolder,
     globalHash,
@@ -82,93 +103,125 @@ const build = async ({
   })
 }
 
+const options = {
+  awsId: {
+    type: 'string',
+    demandOption: true,
+  },
+  awsSecret: {
+    type: 'string',
+    demandOption: true,
+  },
+  awsBucket: {
+    type: 'string',
+    demandOption: true,
+  },
+  cacheKey: {
+    type: 'string',
+    default: 'v1',
+    description: 'Global cache key. Can be used for cache busting.',
+  },
+  cacheFolder: {
+    type: 'string',
+    default: './node_modules/.cache/beezel',
+    description: "Where to store Beezel's cache locally.",
+  },
+  otherYarnCaches: {
+    type: 'array',
+    default: [] as string[],
+    description: 'Other locations to include in the yarn cache.',
+  },
+  globalDependencies: {
+    type: 'array',
+    default: [] as string[],
+    description: 'Files to take into account when determining the global hash.',
+  },
+} as const
+
+const getRoot = (): string => {
+  const root = findWorkspaceRoot(process.cwd())
+  if (!root) {
+    throw new Error('Could not find workspace root.')
+  }
+  return root
+}
+
+const getPackage = async (root: string): Promise<any> => {
+  const packageJsonPath = path.join(root, 'package.json')
+  const pkg = await fs.readJson(packageJsonPath)
+  if (!pkg) {
+    throw new Error(`Could not find package.json at ${packageJsonPath}`)
+  }
+  return pkg
+}
+
+const getAndPrintConfig = async (
+  args: yargs.InferredOptionTypes<typeof options>,
+): Promise<Config & { root: string }> => {
+  const root = getRoot()
+  const pkg = await getPackage(root)
+  const configFromPackage: Partial<Config> = pkg.beezel || {}
+  const transformCacheFolder = (folder: string) =>
+    folder.startsWith('.') ? path.join(root, folder) : expandTilde(folder)
+  const extractConfig = (c: Config): Config => ({
+    cacheFolder: c.cacheFolder,
+    cacheKey: c.cacheKey,
+    globalDependencies: c.globalDependencies,
+    otherYarnCaches: c.otherYarnCaches,
+  })
+  const config: Config = { ...extractConfig(args), ...configFromPackage }
+  const finalConfig = {
+    root,
+    ...config,
+    cacheFolder: transformCacheFolder(config.cacheFolder),
+  }
+  console.log(`Beezel - v${pkg.version}`)
+  console.log('Configuration:')
+  console.log(JSON.stringify(finalConfig, null, 2))
+  return finalConfig
+}
+
 yargs
   .env('BEEZEL')
   .command(
-    'build',
-    'Build the project.',
-    (yargs) =>
-      yargs.options({
-        awsId: {
-          type: 'string',
-          demandOption: true,
-        },
-        awsSecret: {
-          type: 'string',
-          demandOption: true,
-        },
-        awsBucket: {
-          type: 'string',
-          demandOption: true,
-        },
-        cacheKey: {
-          type: 'string',
-          default: 'v1',
-          description: 'Global cache key. Can be used for cache busting.',
-        },
-        cacheFolder: {
-          type: 'string',
-          default: './node_modules/.cache/beezel',
-          description: "Where to store Beezel's cache locally.",
-        },
-        otherYarnCaches: {
-          type: 'array',
-          default: [] as string[],
-          description: 'Other locations to include in the yarn cache.',
-        },
-        globalDependencies: {
-          type: 'array',
-          default: [] as string[],
-          description:
-            'Files to take into account when determining the global hash.',
-        },
-      }),
+    'yarn',
+    'Install dependencies.',
+    (yargs) => yargs.options(options),
     async (args) => {
-      const root = findWorkspaceRoot(process.cwd())
-      if (!root) {
-        throw new Error('Could not find workspace root.')
-      }
-
-      const packageJsonPath = path.join(root, 'package.json')
-      const pkg = await fs.readJson(packageJsonPath)
-      if (!pkg) {
-        throw new Error(`Could not find package.json at ${packageJsonPath}`)
-      }
-
-      const configFromPackage: Partial<Config> = pkg.beezel || {}
+      const config = await getAndPrintConfig(args)
       const s3 = new AWS.S3({
         credentials: {
           accessKeyId: args.awsId,
           secretAccessKey: args.awsSecret,
         },
       })
-
-      const transformCacheFolder = (folder: string) =>
-        folder.startsWith('.') ? path.join(root, folder) : expandTilde(folder)
-
-      const extractConfig = (c: Config): Config => ({
-        cacheFolder: c.cacheFolder,
-        cacheKey: c.cacheKey,
-        globalDependencies: c.globalDependencies,
-        otherYarnCaches: c.otherYarnCaches,
-      })
-      const config: Config = { ...extractConfig(args), ...configFromPackage }
-      const finalConfig: Config = {
+      await runYarn({
         ...config,
-        cacheFolder: transformCacheFolder(config.cacheFolder),
-      }
-
-      console.log(`Beezel - v${pkg.version}`)
-      console.log('Configuration:')
-      console.log(JSON.stringify(finalConfig, null, 2))
-
-      await build({
-        ...finalConfig,
         awsId: args.awsId,
         awsBucket: args.awsBucket,
         awsSecret: args.awsSecret,
         s3,
-        root,
+      })
+    },
+  )
+  .command(
+    'build',
+    'Build the project.',
+    (yargs) => yargs.options(options),
+    async (args) => {
+      const config = await getAndPrintConfig(args)
+      const s3 = new AWS.S3({
+        credentials: {
+          accessKeyId: args.awsId,
+          secretAccessKey: args.awsSecret,
+        },
+      })
+      await runBuild({
+        ...config,
+        awsId: args.awsId,
+        awsBucket: args.awsBucket,
+        awsSecret: args.awsSecret,
+        s3,
       })
     },
   )
