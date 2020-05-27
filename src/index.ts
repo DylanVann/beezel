@@ -225,4 +225,5 @@ yargs
       })
     },
   )
+  .demandCommand(1, '')
   .parse()
